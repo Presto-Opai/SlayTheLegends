@@ -1,0 +1,827 @@
+// ===================== META PROGRESS =====================
+class MetaProgress {
+  constructor() {
+    this.legacyPoints = 0;
+    this.totalRuns = 0;
+    this.bestFloor = 0;
+    this.totalKills = 0;
+    this.upgrades = {};
+    this.load();
+  }
+
+  load() {
+    try {
+      const raw = localStorage.getItem("legendes_meta");
+      if (!raw) return;
+      const data = JSON.parse(raw);
+      this.legacyPoints = data.legacyPoints || 0;
+      this.totalRuns = data.totalRuns || 0;
+      this.bestFloor = data.bestFloor || 0;
+      this.totalKills = data.totalKills || 0;
+      this.upgrades = data.upgrades || {};
+    } catch (e) { /* ignore */ }
+  }
+
+  save() {
+    localStorage.setItem("legendes_meta", JSON.stringify({
+      legacyPoints: this.legacyPoints,
+      totalRuns: this.totalRuns,
+      bestFloor: this.bestFloor,
+      totalKills: this.totalKills,
+      upgrades: this.upgrades,
+    }));
+  }
+
+  rank(id) { return this.upgrades[id] || 0; }
+
+  cost(id) {
+    const u = META_UPGRADES.find(u => u.id === id);
+    return u ? u.base_cost + u.cost_inc * this.rank(id) : 999;
+  }
+
+  canBuy(id) {
+    const u = META_UPGRADES.find(u => u.id === id);
+    if (!u) return false;
+    return this.rank(id) < u.max_rank && this.legacyPoints >= this.cost(id);
+  }
+
+  buy(id) {
+    if (!this.canBuy(id)) return false;
+    this.legacyPoints -= this.cost(id);
+    this.upgrades[id] = this.rank(id) + 1;
+    this.save();
+    return true;
+  }
+
+  recordRun(floor, kills) {
+    this.totalRuns++;
+    this.totalKills += kills;
+    if (floor > this.bestFloor) this.bestFloor = floor;
+    let points = floor * 3 + kills;
+    if (floor >= 5) points += 10;
+    if (floor >= 10) points += 20;
+    if (floor >= 15) points += 30;
+    this.legacyPoints += points;
+    this.save();
+    return points;
+  }
+}
+
+// ===================== GAME =====================
+class Game {
+  constructor(meta) {
+    this.meta = meta || new MetaProgress();
+    this.level = 0;
+    this.kills = 0;
+
+    const bonusHp = this.meta.rank("max_hp") * 5;
+    const baseHp = 65 + bonusHp;
+    this.player = {
+      max_hp: baseHp, hp: baseHp, block: 0,
+      armor: this.meta.rank("start_armor"),
+      strength: this.meta.rank("start_str"),
+      weak: 0, song_block: 0
+    };
+    this.energy = 3;
+    this.nextEnergy = 0;
+    this.drawPile = [];
+    this.discard = [];
+    this.hand = [];
+    this.exhaust = [];
+    this.log = "Bienvenue, héros !";
+    this.enemy = null;
+    this.enemyIntent = { type: "attack", value: 6 };
+    this.handsize = 5 + this.meta.rank("card_draw");
+    this.inReward = false;
+    this.rewardChoices = [];
+    this.rewardType = "card";
+    this.gold = this.meta.rank("start_gold") * 15;
+    this.inShop = false;
+    this.shopItems = [];
+    this.relics = [];
+    this.potions = [];
+    this.maxPotions = 3 + this.meta.rank("potion_slot");
+    this.healOnWinBonus = this.meta.rank("heal_on_win") * 3;
+    this.damageTakenThisCombat = 0;
+    this.attacksPlayed = 0;
+    this.turnNumber = 0;
+    this.rampageBonus = {};
+    this.revealedIntents = [];
+    this.dead = false;
+
+    // Starting potion from meta
+    if (this.meta.rank("start_potion") > 0) {
+      this.potions.push({ ...POTIONS[Math.floor(Math.random() * POTIONS.length)] });
+    }
+
+    // Starting deck
+    const startNames = [
+      "Strike", "Strike", "Strike", "Strike", "Strike",
+      "Defend", "Defend", "Defend", "Defend",
+      "Lunge", "Expose", "Focus"
+    ];
+    this.deck = startNames.map(n => ({ ...CARD_DB[n] }));
+    this.shuffle(this.deck);
+    this.drawPile = this.deck.map(c => ({ ...c }));
+    this.discard = [];
+    this.exhaust = [];
+    this.nextEnemy();
+  }
+
+  // ---- Utilities ----
+  randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+  shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } }
+
+  clamp() { this.player.hp = Math.max(0, Math.min(this.player.hp, this.player.max_hp)); }
+
+  changeEnergy(d) { this.energy = Math.max(0, this.energy + d); }
+  addNextEnergy(n) { this.nextEnergy += n; }
+
+  selfDamage(n) {
+    this.player.hp -= n;
+    this.damageTakenThisCombat += n;
+    this.clamp();
+  }
+
+  hasRelic(name) { return this.relics.some(r => r.name === name); }
+
+  dealDamage(amount, source = "You") {
+    if (source === "You") {
+      amount += this.player.strength;
+      if (this.hasRelic("Red Skull") && this.player.hp < this.player.max_hp * 0.5) amount += 3;
+      if (this.player.weak > 0) amount = Math.floor(amount * 0.75);
+      if (this.hasRelic("Pen Nib") && this.attacksPlayed > 0 && this.attacksPlayed % 10 === 0) amount *= 2;
+    }
+    if (this.enemy.vuln > 0 && source === "You") amount = Math.floor(amount * 1.5);
+    amount = Math.max(0, amount);
+    if (this.enemy.block > 0) {
+      const absorb = Math.min(this.enemy.block, amount);
+      this.enemy.block -= absorb;
+      amount -= absorb;
+    }
+    this.enemy.hp -= amount;
+    if (source === "You" && this.enemy.special === "thorns") {
+      this.player.hp -= 2;
+      this.clamp();
+    }
+    return amount;
+  }
+
+  gainBlock(n) {
+    n += this.player.armor;
+    this.player.block += n;
+  }
+
+  heal(n) { this.player.hp += n; this.clamp(); }
+
+  draw(n) {
+    for (let i = 0; i < n; i++) {
+      if (this.drawPile.length === 0) {
+        if (this.discard.length === 0) break;
+        this.shuffle(this.discard);
+        this.drawPile = this.discard;
+        this.discard = [];
+      }
+      this.hand.push(this.drawPile.pop());
+    }
+  }
+
+  applyVuln(n) { this.enemy.vuln += n; }
+  applyWeak(n) { this.enemy.weak += n; }
+
+  discardOrExhaust(card) {
+    if (card.text && card.text.includes("Exhaust.")) {
+      this.exhaust.push(card);
+    } else {
+      this.discard.push(card);
+    }
+  }
+
+  negateEnemyAttack(n) {
+    if (this.enemyIntent.type === "attack") {
+      this.enemyIntent.value = Math.max(0, this.enemyIntent.value - n);
+    }
+  }
+
+  revealIntents(n) {
+    this.revealedIntents = [];
+    for (let i = 0; i < n; i++) {
+      if (Math.random() < this.enemy.block_chance) {
+        this.revealedIntents.push({ type: "block", value: this.randInt(6, 10) });
+      } else {
+        this.revealedIntents.push({ type: "attack", value: this.randInt(this.enemy.atk_min, this.enemy.atk_max) });
+      }
+    }
+  }
+
+  usePotion(idx) {
+    if (idx < 0 || idx >= this.potions.length || this.inReward) return;
+    const p = this.potions.splice(idx, 1)[0];
+    switch (p.action) {
+      case "damage": this.dealDamage(p.value, "You"); this.log = `Used ${p.name}: ${p.value} damage!`; break;
+      case "block": this.gainBlock(p.value); this.log = `Used ${p.name}: +${p.value} block!`; break;
+      case "strength": this.player.strength += p.value; this.log = `Used ${p.name}: +${p.value} STR!`; break;
+      case "draw": this.draw(p.value); this.log = `Used ${p.name}: drew ${p.value}!`; break;
+      case "vuln": this.applyVuln(p.value); this.log = `Used ${p.name}: ${p.value} Vulnerable!`; break;
+      case "weak": this.applyWeak(p.value); this.log = `Used ${p.name}: ${p.value} Weak!`; break;
+      case "heal": this.heal(p.value); this.log = `Used ${p.name}: healed ${p.value}!`; break;
+      case "energy": this.changeEnergy(p.value); this.log = `Used ${p.name}: +${p.value} energy!`; break;
+    }
+    if (this.enemy && this.enemy.hp <= 0) { this.winBattle(); return; }
+  }
+
+  // ---- Card Effects ----
+  executeCardEffect(card) {
+    const k = card.effectKey;
+    switch (k) {
+      case "atk6": return `Deal ${this.dealDamage(6, "You")}.`;
+      case "block5": this.gainBlock(5); return "Gain 5 block.";
+      case "lunge": this.dealDamage(4, "You"); this.draw(1); return "Hit 4, drew 1.";
+      case "draw2": this.draw(2); return "Drew 2.";
+      case "vuln1": this.applyVuln(1); return "Enemy is Vulnerable for 1 turn.";
+      case "weak1": this.applyWeak(1); return "Enemy is Weakened for 1 turn.";
+      case "weak2": this.applyWeak(2); return "Enemy is Weakened for 2 turns.";
+      case "fortify": this.player.armor += 1; return "+1 armor (persists).";
+      case "rally": this.player.strength += 1; return "+1 strength (persists).";
+      case "adrenalineRush": this.changeEnergy(2); this.draw(1); return "+2 energy, drew 1. Exhausted.";
+      case "bloodPact": this.selfDamage(3); this.dealDamage(12, "You"); return "Blood for power: 12 dmg!";
+      case "block16": this.gainBlock(16); return "Gain 16 block.";
+      case "offering": this.selfDamage(6); this.changeEnergy(2); this.draw(3); return "Sacrifice: +2 energy, drew 3. Exhausted.";
+      case "shockwave": this.applyWeak(3); this.applyVuln(3); return "Shockwave: 3 Weak + 3 Vuln!";
+      case "atk9": return `Deal ${this.dealDamage(9, "You")}.`;
+      case "atk14": return `Deal ${this.dealDamage(14, "You")}.`;
+      case "block7": this.gainBlock(7); return "Gain 7 block.";
+      case "block12": this.gainBlock(12); return "Gain 12 block.";
+      case "ankouScythe": this.dealDamage(10, "You"); this.enemy.vuln += 1; return "Scythe: 10 + 1 Vuln";
+      case "korriganTrick": this.draw(1); this.changeEnergy(1); return "Drew 1, +1 energy.";
+      case "tarasqueRoar": this.applyVuln(2); this.draw(1); return "Roar: 2 Vuln, drew 1.";
+      case "dracCamargue": { const d = 7 + (this.enemy.vuln > 0 ? 4 : 0); this.dealDamage(d, "You"); return `Drac bites for ${d}.`; }
+      case "santonsBlessing": this.gainBlock(6); this.heal(2); return "Blessed: +6 block, heal 2.";
+      case "mauvaisPas": this.dealDamage(5, "You"); this.enemy.weak += 1; return "Slip: 5 + 1 Weak";
+      case "dahuSidestep": this.gainBlock(4); this.draw(1); return "Sidestep +4 block, drew 1.";
+      case "avalancheChant": this.negateEnemyAttack(8); return "Snow muffles claws.";
+      case "loupAlpes": { const d = 6 + (this.enemy.weak > 0 ? 3 : 0); this.dealDamage(d, "You"); return `Wolf tears for ${d}.`; }
+      case "volcanBreath": this.player.strength += 1; this.enemy.vuln += 1; return "+1 STR, +1 Vuln";
+      case "melusineVeil": this.gainBlock(5); this.addNextEnergy(1); return "Veil: +5 block, +1 energy next turn.";
+      case "gargantuaStep": this.dealDamage(9, "You"); this.draw(1); return "Stomp for 9; drew 1.";
+      case "chateauRuse": this.applyWeak(1); this.applyVuln(1); return "Cunning: 1 Weak + 1 Vuln.";
+      case "bayardHoofbeat": this.dealDamage(4, "You"); this.dealDamage(4, "You"); return "Hoofbeat 4x2.";
+      case "louPastreBallad": this.player.song_block += 2; return "Ballad: +2 end-of-turn block.";
+      case "feesOrb": this.heal(3); this.draw(1); return "Fairies: heal 3, drew 1.";
+      case "catharResolve": this.gainBlock(9); this.player.weak = Math.max(0, this.player.weak - 1); return "Resolve: +9 block; cleansed 1 Weak.";
+      case "mazzeruVision": this.revealIntents(2); this.draw(1); return "The mazzeru sees what comes...";
+      case "storkBlessing": this.heal(4); this.gainBlock(4); return "Stork brings good fortune: heal 4, +4 block.";
+      case "hansTrapFury": this.dealDamage(8, "You"); this.applyWeak(2); return "Hans Trapp rages: 8 dmg + 2 Weak!";
+      case "rhineGold": this.changeEnergy(1); this.gainBlock(3); return "Golden light: +1 energy, +3 block.";
+      default: return card.text;
+    }
+  }
+
+  // ---- Turn Flow ----
+  nextEnemy() {
+    let tier = 1;
+    if (this.level >= 3) tier = 2;
+    if (this.level >= 6) tier = 3;
+    if (this.level >= 9) tier = 4;
+
+    const candidates = ENEMIES.filter(e => e.tier <= tier);
+    const weights = candidates.map(e => e.tier * e.tier);
+    const totalW = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * totalW;
+    let template = candidates[0];
+    for (let i = 0; i < candidates.length; i++) {
+      r -= weights[i];
+      if (r <= 0) { template = candidates[i]; break; }
+    }
+    template = { ...template };
+
+    const lvl = this.level;
+    let scale;
+    if (lvl <= 30) {
+      scale = 1.0 + 0.10 * lvl;
+    } else {
+      const over = lvl - 30;
+      scale = 4.0 + 0.25 * over + 0.01 * over * over;
+    }
+    template.max_hp = Math.floor(template.max_hp * scale);
+    template.atk_min = Math.floor(template.atk_min * scale);
+    template.atk_max = Math.floor(template.atk_max * scale);
+
+    this.enemy = {
+      ...template,
+      hp: template.max_hp, block: 0, vuln: 0, weak: 0, enrage_stacks: 0
+    };
+    this.damageTakenThisCombat = 0;
+    this.turnNumber = 0;
+    this.revealedIntents = [];
+    this.rampageBonus = {};
+
+    if (this.hasRelic("Bag of Marbles")) this.enemy.vuln += 1;
+    if (this.hasRelic("Anchor")) this.player.block += 10;
+
+    this.inReward = false;
+    this.startPlayerTurn();
+    this.pickEnemyIntent();
+    this.log = `Un ${this.enemy.name} apparaît !`;
+  }
+
+  startPlayerTurn() {
+    this.turnNumber++;
+    this.energy = 3 + this.nextEnergy;
+    this.nextEnergy = 0;
+    this.player.block = 0;
+    if (this.hasRelic("Horn Cleat") && this.turnNumber === 2) this.energy += 1;
+    this.draw(this.handsize);
+  }
+
+  endPlayerTurn() {
+    if (this.player.song_block > 0) this.player.block += this.player.song_block;
+    if (this.hasRelic("Orichalcum") && this.player.block === 0) this.player.block += 6;
+
+    this.enemyAct();
+    this.tickStatus();
+    this.discard.push(...this.hand);
+    this.hand = [];
+
+    if (this.enemy.hp <= 0) { this.winBattle(); return; }
+    if (this.player.hp <= 0) { this.loseGame(); return; }
+
+    this.startPlayerTurn();
+    this.pickEnemyIntent();
+  }
+
+  tickStatus() {
+    if (this.enemy.vuln > 0) this.enemy.vuln--;
+    if (this.enemy.weak > 0) this.enemy.weak--;
+    if (this.player.weak > 0) this.player.weak--;
+  }
+
+  pickEnemyIntent() {
+    if (Math.random() < this.enemy.block_chance) {
+      this.enemyIntent = { type: "block", value: this.randInt(6, 10) };
+    } else {
+      const val = this.randInt(this.enemy.atk_min, this.enemy.atk_max);
+      const special = this.enemy.special;
+      if (special === "multi_hit") {
+        this.enemyIntent = { type: "attack", value: Math.floor(val / 2), hits: 2 };
+      } else if (special === "crush" && Math.random() < 0.3) {
+        this.enemyIntent = { type: "attack", value: Math.floor(val * 1.5), hits: 1 };
+      } else {
+        this.enemyIntent = { type: "attack", value: val, hits: 1 };
+      }
+    }
+  }
+
+  enemyAct() {
+    const special = this.enemy.special;
+    if (this.enemyIntent.type === "attack") {
+      const hits = this.enemyIntent.hits || 1;
+      let total = 0;
+      for (let h = 0; h < hits; h++) {
+        let dmg = this.enemyIntent.value;
+        if (this.enemy.weak > 0) dmg = Math.floor(dmg * 0.75);
+        dmg += (this.enemy.enrage_stacks || 0);
+        if (this.hasRelic("Torii") && dmg <= 5 && dmg > 0) dmg = 1;
+        if (this.player.block > 0) {
+          const ab = Math.min(this.player.block, dmg);
+          this.player.block -= ab;
+          dmg -= ab;
+        }
+        const actual = Math.max(0, dmg);
+        this.player.hp -= actual;
+        this.damageTakenThisCombat += actual;
+        total += actual;
+        if (special === "life_drain") {
+          this.enemy.hp = Math.min(this.enemy.max_hp, this.enemy.hp + Math.floor(actual / 2));
+        }
+      }
+      this.clamp();
+      const hitText = hits > 1 ? ` x${hits}` : "";
+      this.log = `${this.enemy.name} strikes for ${this.enemyIntent.value}${hitText}.`;
+    } else {
+      this.enemy.block += this.enemyIntent.value;
+      this.log = `${this.enemy.name} braces (+${this.enemyIntent.value} block).`;
+    }
+
+    if (special === "steal_energy" && Math.random() < 0.3) {
+      const stolen = Math.min(1, this.energy);
+      this.energy -= stolen;
+      if (stolen) this.log += " Stole 1 energy!";
+    }
+    if (special === "weaken_player" && Math.random() < 0.4) {
+      this.player.weak += 1;
+      this.log += " Applied 1 Weak!";
+    }
+    if (special === "regen") {
+      const ra = Math.max(2, Math.floor(this.enemy.max_hp * 0.04));
+      this.enemy.hp = Math.min(this.enemy.max_hp, this.enemy.hp + ra);
+      this.log += ` Regenerated ${ra}.`;
+    }
+    if (special === "enrage") {
+      this.enemy.enrage_stacks = (this.enemy.enrage_stacks || 0) + 1;
+      this.log += ` Enraged! (+${this.enemy.enrage_stacks} dmg)`;
+    }
+    if (special === "summon_hounds" && this.turnNumber % 3 === 0) {
+      this.player.hp -= 4;
+      this.clamp();
+      this.log += " Hounds bite for 4!";
+    }
+    if (special === "mirror" && Math.random() < 0.25) {
+      this.enemy.block += 8;
+      this.log += " Mirror: +8 block!";
+    }
+  }
+
+  playCard(idx) {
+    if (this.inReward || this.dead) return;
+    if (idx < 0 || idx >= this.hand.length) return;
+    const card = this.hand[idx];
+    if (card.cost > this.energy) { this.log = "Pas assez d'énergie."; return; }
+
+    const played = this.hand.splice(idx, 1)[0];
+    this.energy -= played.cost;
+    if (played.type === "Attack") this.attacksPlayed++;
+
+    // Special cards
+    if (played.effectKey === "dameBlanche") {
+      const top = this.drawPile.slice(-2).reverse();
+      this.discardOrExhaust(played);
+      this.log = "Dame Blanche — Scry 2.";
+      this._scryCards = top;
+      return;
+    }
+    if (played.effectKey === "forestAmbush") {
+      if (this.enemyIntent.type === "attack") { this.gainBlock(8); this.log = "Ambush: +8 block."; }
+      else this.log = "Ambush fizzles.";
+      this.discardOrExhaust(played);
+      return;
+    }
+    if (played.effectKey === "smugglersWile") {
+      this.draw(2);
+      if (this.hand.length > 0) this.discard.push(this.hand.pop());
+      this.discardOrExhaust(played);
+      this.log = "Wile: drew 2, discarded last.";
+      return;
+    }
+    if (played.effectKey === "whirlwind") {
+      const times = Math.max(1, this.energy);
+      this.energy = 0;
+      for (let i = 0; i < times; i++) this.dealDamage(4, "You");
+      this.discardOrExhaust(played);
+      this.log = `Whirlwind: 4 damage x${times}!`;
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+    if (played.effectKey === "secondWind") {
+      const n = this.hand.length;
+      this.gainBlock(5 * n);
+      this.discardOrExhaust(played);
+      this.log = `Second Wind: +${5 * n} block (${n} cards)!`;
+      return;
+    }
+    if (played.effectKey === "rampage") {
+      const bonus = this.rampageBonus["Rampage"] || 0;
+      const baseDmg = 8 + bonus;
+      this.dealDamage(baseDmg, "You");
+      this.rampageBonus["Rampage"] = bonus + 4;
+      this.discardOrExhaust(played);
+      this.log = `Rampage: ${baseDmg} dégâts.`;
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+    if (played.effectKey === "bodySlam") {
+      const dmg = this.player.block;
+      this.dealDamage(dmg, "You");
+      this.discardOrExhaust(played);
+      this.log = `Body Slam: ${dmg} damage (from block)!`;
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+    if (played.effectKey === "vendettaStrike") {
+      const bonus = this.damageTakenThisCombat * 2;
+      this.dealDamage(5 + bonus, "You");
+      this.discardOrExhaust(played);
+      this.log = `Vendetta: ${5 + bonus} damage (${this.damageTakenThisCombat} dmg taken)!`;
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+    if (played.effectKey === "maquisAmbush") {
+      if (this.enemyIntent.type === "attack") {
+        this.dealDamage(8, "You");
+        this.log = "Maquis Ambush: 8 damage!";
+      } else {
+        this.dealDamage(3, "You");
+        this.log = "Maquis Ambush: 3 damage.";
+      }
+      this.discardOrExhaust(played);
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+
+    // Normal effect
+    const msg = this.executeCardEffect(played);
+    this.discardOrExhaust(played);
+    this.log = msg || played.text;
+    if (this.enemy.hp <= 0) { this.winBattle(); return; }
+  }
+
+  // Scry helpers
+  scryDiscardAll() {
+    if (!this._scryCards) return;
+    for (let i = 0; i < this._scryCards.length; i++) {
+      if (this.drawPile.length > 0) this.discard.push(this.drawPile.pop());
+    }
+    this._scryCards = null;
+    this.log = "Discarded scryed cards.";
+  }
+  scryKeepAll() {
+    this._scryCards = null;
+    this.log = "Kept scryed cards.";
+  }
+  scryDiscardFirst() {
+    if (this.drawPile.length > 0) this.discard.push(this.drawPile.pop());
+    this._scryCards = null;
+    this.log = "Discarded first.";
+  }
+
+  winBattle() {
+    this.inReward = true;
+    this.level++;
+    this.kills++;
+    this.player.block = 0;
+    this.enemyIntent = { type: "none", value: 0 };
+
+    let healAmt = 6 + this.healOnWinBonus;
+    if (this.hasRelic("Burning Blood")) healAmt += 8;
+    if (this.hasRelic("Meat on Bone") && this.player.hp < this.player.max_hp * 0.5) healAmt += 12;
+    this.heal(healAmt);
+
+    this.saveRun();
+
+    const goldGain = this.randInt(10, 25) + this.level * 2;
+    this.gold += goldGain;
+
+    const roll = Math.random();
+    if (roll < 0.15 && this.potions.length < this.maxPotions) {
+      this.rewardType = "potion";
+      this.rewardChoices = this._sample(POTIONS, 3).map(p => ({ ...p }));
+      this.log = `Victoire ! +${goldGain} or. Choisissez une potion.`;
+    } else if (roll < 0.25 && this.level % 3 === 0) {
+      this.rewardType = "relic";
+      const available = RELICS.filter(r => !this.hasRelic(r.name));
+      if (available.length > 0) {
+        this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
+        this.log = `Victoire ! +${goldGain} or. Choisissez une relique !`;
+      } else {
+        this._cardReward(goldGain);
+      }
+    } else {
+      this._cardReward(goldGain);
+    }
+  }
+
+  _sample(arr, k) {
+    const copy = [...arr];
+    const result = [];
+    for (let i = 0; i < Math.min(k, copy.length); i++) {
+      const idx = Math.floor(Math.random() * copy.length);
+      result.push(copy.splice(idx, 1)[0]);
+    }
+    return result;
+  }
+
+  _cardReward(goldGain) {
+    this.rewardType = "card";
+    const regionKeys = Object.keys(REGIONS);
+    const region = regionKeys[Math.floor(Math.random() * regionKeys.length)];
+    let pool = [...REGIONS[region]];
+    pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
+      "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind");
+    if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave");
+    if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering");
+    const unique = [...new Set(pool)];
+    const choices = this._sample(unique, 3);
+    this.rewardChoices = choices.filter(n => CARD_DB[n]).map(n => ({ ...CARD_DB[n] }));
+    this.log = `Victoire ! +${goldGain} or. Choisissez une carte (${region}).`;
+  }
+
+  takeReward(i) {
+    if (!this.inReward) return;
+    if (i !== null && i >= 0 && i < this.rewardChoices.length) {
+      const choice = this.rewardChoices[i];
+      if (this.rewardType === "card") {
+        this.deck.push({ ...choice });
+        this.log = `Ajouté: ${choice.name}.`;
+      } else if (this.rewardType === "relic") {
+        this.relics.push({ ...choice });
+        if (choice.effect === "strength") this.player.strength += choice.value;
+        this.log = `Relique: ${choice.name} — ${choice.desc}`;
+      } else if (this.rewardType === "potion") {
+        if (this.potions.length < this.maxPotions) {
+          this.potions.push({ ...choice });
+          this.log = `Potion: ${choice.name}.`;
+        } else {
+          this.log = "Inventaire de potions plein !";
+          return;
+        }
+      }
+    } else {
+      this.log = "Pass.";
+    }
+    this.rewardChoices = [];
+
+    if (this.level % 3 === 0 && this.level > 0) {
+      this.openShop();
+      return;
+    }
+
+    this._reshuffleAndNext();
+  }
+
+  _reshuffleAndNext() {
+    this.discard.push(...this.hand);
+    this.hand = [];
+    this.drawPile = [...this.deck.map(c => ({ ...c })), ...this.discard];
+    this.discard = [];
+    this.shuffle(this.drawPile);
+    this.nextEnemy();
+  }
+
+  // ---- Shop ----
+  openShop() {
+    this.inShop = true;
+    this.inReward = false;
+    this.rewardChoices = [];
+    this.shopItems = [];
+
+    const allCards = Object.keys(CARD_DB);
+    const shopCardNames = this._sample(allCards, 5);
+    for (const name of shopCardNames) {
+      const card = CARD_DB[name];
+      const rarity = card.rarity || "common";
+      let price = { common: 30, uncommon: 55, rare: 85 }[rarity] || 40;
+      price += this.randInt(-5, 5);
+      this.shopItems.push({ item: { ...card }, price, type: "card", sold: false });
+    }
+
+    const pot = POTIONS[Math.floor(Math.random() * POTIONS.length)];
+    this.shopItems.push({ item: { ...pot }, price: this.randInt(20, 35), type: "potion", sold: false });
+
+    const availableRelics = RELICS.filter(r => !this.hasRelic(r.name));
+    if (availableRelics.length > 0) {
+      const rel = availableRelics[Math.floor(Math.random() * availableRelics.length)];
+      this.shopItems.push({ item: { ...rel }, price: this.randInt(80, 120), type: "relic", sold: false });
+    }
+
+    this.shopItems.push({
+      item: { name: "Remove a card", desc: "Remove a card from your deck." },
+      price: 50 + this.level * 5, type: "remove", sold: false
+    });
+
+    this.log = `Bienvenue à la boutique ! Or: ${this.gold}`;
+  }
+
+  buyShopItem(idx) {
+    if (!this.inShop || idx < 0 || idx >= this.shopItems.length) return;
+    const item = this.shopItems[idx];
+    if (item.sold) { this.log = "Déjà acheté."; return; }
+    if (this.gold < item.price) { this.log = "Pas assez d'or !"; return; }
+
+    this.gold -= item.price;
+    item.sold = true;
+
+    if (item.type === "card") {
+      this.deck.push({ ...item.item });
+      this.log = `Acheté: ${item.item.name} pour ${item.price} or.`;
+    } else if (item.type === "potion") {
+      if (this.potions.length < this.maxPotions) {
+        this.potions.push({ ...item.item });
+        this.log = `Potion achetée: ${item.item.name}.`;
+      } else {
+        this.gold += item.price;
+        item.sold = false;
+        this.log = "Inventaire de potions plein !";
+      }
+    } else if (item.type === "relic") {
+      this.relics.push({ ...item.item });
+      if (item.item.effect === "strength") this.player.strength += item.item.value;
+      this.log = `Relique achetée: ${item.item.name}.`;
+    } else if (item.type === "remove") {
+      this._showingRemoval = true;
+      return;
+    }
+  }
+
+  removeCardFromDeck(idx) {
+    if (idx < 0 || idx >= this.deck.length) return;
+    const removed = this.deck.splice(idx, 1)[0];
+    for (const si of this.shopItems) {
+      if (si.type === "remove") si.sold = true;
+    }
+    this._showingRemoval = false;
+    this.log = `Retiré: ${removed.name} du deck.`;
+  }
+
+  leaveShop() {
+    this.inShop = false;
+    this._showingRemoval = false;
+    this.shopItems = [];
+    this._reshuffleAndNext();
+  }
+
+  // ---- Save / Load ----
+  saveRun() {
+    const cardNames = cards => cards.map(c => c.name);
+    const data = {
+      level: this.level, kills: this.kills,
+      player: { ...this.player },
+      energy: this.energy, nextEnergy: this.nextEnergy,
+      gold: this.gold, handsize: this.handsize,
+      maxPotions: this.maxPotions, healOnWinBonus: this.healOnWinBonus,
+      attacksPlayed: this.attacksPlayed, rampageBonus: this.rampageBonus,
+      deck: cardNames(this.deck), drawPile: cardNames(this.drawPile),
+      discard: cardNames(this.discard), hand: cardNames(this.hand),
+      relics: this.relics.map(r => ({ name: r.name })),
+      potions: this.potions.map(p => ({ name: p.name })),
+      enemy: {
+        name: this.enemy.name, hp: this.enemy.hp, max_hp: this.enemy.max_hp,
+        block: this.enemy.block, vuln: this.enemy.vuln, weak: this.enemy.weak,
+        atk_min: this.enemy.atk_min, atk_max: this.enemy.atk_max,
+        block_chance: this.enemy.block_chance, special: this.enemy.special,
+        tier: this.enemy.tier || 1, enrage_stacks: this.enemy.enrage_stacks || 0,
+      },
+      enemyIntent: this.enemyIntent,
+      turnNumber: this.turnNumber,
+      inReward: this.inReward, inShop: this.inShop,
+    };
+    localStorage.setItem("legendes_save", JSON.stringify(data));
+  }
+
+  static loadRun(meta) {
+    try {
+      const raw = localStorage.getItem("legendes_save");
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      const cardsFromNames = names => names.filter(n => CARD_DB[n]).map(n => ({ ...CARD_DB[n] }));
+
+      const g = new Game(meta);
+      // Overwrite defaults with saved state
+      g.level = data.level;
+      g.kills = data.kills || 0;
+      g.player = data.player;
+      g.energy = data.energy;
+      g.nextEnergy = data.nextEnergy || 0;
+      g.gold = data.gold;
+      g.handsize = data.handsize || 5;
+      g.maxPotions = data.maxPotions || 3;
+      g.healOnWinBonus = data.healOnWinBonus || 0;
+      g.attacksPlayed = data.attacksPlayed || 0;
+      g.rampageBonus = data.rampageBonus || {};
+      g.damageTakenThisCombat = 0;
+      g.revealedIntents = [];
+      g.turnNumber = data.turnNumber || 0;
+      g.exhaust = [];
+      g.log = "Partie chargée !";
+      g.inReward = data.inReward || false;
+      g.inShop = data.inShop || false;
+      g.shopItems = [];
+      g.rewardChoices = [];
+      g.rewardType = "card";
+      g.deck = cardsFromNames(data.deck);
+      g.drawPile = cardsFromNames(data.drawPile);
+      g.discard = cardsFromNames(data.discard);
+      g.hand = cardsFromNames(data.hand);
+      g.relics = [];
+      for (const rd of (data.relics || [])) {
+        const r = RELICS.find(r => r.name === rd.name);
+        if (r) g.relics.push({ ...r });
+      }
+      g.potions = [];
+      for (const pd of (data.potions || [])) {
+        const p = POTIONS.find(p => p.name === pd.name);
+        if (p) g.potions.push({ ...p });
+      }
+      const ed = data.enemy;
+      g.enemy = {
+        name: ed.name, hp: ed.hp, max_hp: ed.max_hp,
+        block: ed.block, vuln: ed.vuln, weak: ed.weak,
+        atk_min: ed.atk_min, atk_max: ed.atk_max,
+        block_chance: ed.block_chance, special: ed.special,
+        tier: ed.tier || 1, enrage_stacks: ed.enrage_stacks || 0,
+      };
+      g.enemyIntent = data.enemyIntent || { type: "attack", value: 6 };
+      return g;
+    } catch (e) { return null; }
+  }
+
+  deleteRunSave() { localStorage.removeItem("legendes_save"); }
+
+  loseGame() {
+    this.dead = true;
+    this.inReward = false;
+    this.inShop = false;
+    const points = this.meta.recordRun(this.level, this.kills);
+    this.log = `Vous tombez au niveau ${this.level}… +${points} points de legs !`;
+    this.deleteRunSave();
+  }
+}
