@@ -1,0 +1,300 @@
+/* ===================== BASE ===================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background: #0d1117;
+  color: #e6f0ff;
+  min-height: 100vh;
+  display: flex;
+}
+button { cursor: pointer; font-family: inherit; }
+
+/* ===================== LAYOUT ===================== */
+#app {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+#game-area {
+  flex: 1;
+  padding: 20px 30px;
+  overflow-y: auto;
+}
+#sidebar {
+  width: 280px;
+  min-width: 260px;
+  background: #0d1117;
+  border-left: 1px solid #1a2330;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+/* ===================== SIDEBAR ===================== */
+.sidebar-title {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  color: #e6f0ff;
+}
+.sidebar-sub { font-size: 10px; color: #5a7a9a; text-align: center; }
+
+#log-text {
+  font-size: 13px;
+  color: #cfe0ff;
+  line-height: 1.4;
+  min-height: 40px;
+  word-wrap: break-word;
+}
+
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.btn {
+  background: #1b2533;
+  color: #e6f0ff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+.btn:hover { background: #2a3a4f; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn-shop { background: #2a331b; color: #a0ff8a; }
+.btn-shop:hover { background: #3a4f2a; }
+.btn-save { background: #1b3322; color: #8affb0; font-size: 11px; padding: 4px 8px; }
+.btn-load { background: #1b2533; color: #8ab8ff; font-size: 11px; padding: 4px 8px; }
+.btn-legs { background: #331b1b; color: #ffaa8a; font-size: 11px; padding: 4px 8px; }
+.btn-restart { background: #2a1a1a; color: #ff8393; font-size: 11px; padding: 4px 8px; }
+.btn-cancel { background: #4a1a1a; color: #ff8393; margin-top: 12px; }
+
+.potion-label { font-size: 11px; font-weight: bold; color: #9cc1ff; }
+.potion-btn {
+  background: #2a1a33; color: #dda0ff; border: none;
+  padding: 3px 8px; border-radius: 3px; font-size: 11px;
+  display: block; margin: 2px 0; text-align: left; width: 100%;
+}
+.potion-btn:hover { background: #3a2a44; }
+
+#relic-list { font-size: 11px; color: #ff9e44; line-height: 1.3; word-wrap: break-word; }
+#meta-stats { font-size: 10px; color: #5a7a5a; }
+
+/* ===================== BARS ===================== */
+.bar-wrap { margin-bottom: 8px; }
+.bar-label { font-size: 11px; color: #bcd3ff; margin-bottom: 2px; }
+.bar-outer {
+  position: relative;
+  height: 22px;
+  background: #1a2330;
+  border: 1px solid #2a3a4f;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-inner {
+  height: 100%;
+  transition: width 0.3s;
+  border-radius: 2px;
+}
+.enemy-bar .bar-inner { background: #e95f67; }
+.player-bar .bar-inner { background: #4adc8f; }
+.bar-text {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-family: Consolas, monospace;
+  color: #e6f0ff;
+}
+
+/* ===================== ENEMY ===================== */
+.enemy-section { margin-bottom: 16px; max-width: 600px; }
+.enemy-stats { font-size: 12px; color: #9cc1ff; margin: 4px 0; }
+.enemy-special { font-size: 12px; color: #ff6b6b; font-style: italic; }
+.enemy-intent { font-size: 13px; font-weight: bold; margin: 4px 0; }
+.intent-attack { color: #ff8393; }
+.intent-block { color: #8affdb; }
+.revealed-intents { font-size: 12px; color: #7a6aff; }
+
+/* ===================== PLAYER ===================== */
+.player-section { margin-bottom: 16px; max-width: 600px; position: relative; }
+.player-stats { font-size: 12px; color: #9cc1ff; margin: 4px 0; }
+.energy-orb {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 48px;
+  height: 48px;
+  background: #1b3555;
+  border: 2px solid #4a9eff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: bold;
+  color: #4a9eff;
+}
+.pile-info { font-size: 11px; color: #5a7a9a; margin-top: 4px; }
+
+/* ===================== CARDS ===================== */
+.card {
+  display: inline-flex;
+  flex-direction: column;
+  width: 150px;
+  min-height: 100px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  flex-shrink: 0;
+}
+.card:hover { transform: translateY(-6px); box-shadow: 0 6px 20px rgba(0,0,0,0.5); z-index: 10; }
+.card.unplayable { opacity: 0.45; }
+.card-common { background: #1b2533; border: 2px solid #9cc1ff; }
+.card-uncommon { background: #0f2a1a; border: 2px solid #5aff8a; }
+.card-rare { background: #2a1f10; border: 2px solid #ff9e44; }
+
+.card-cost {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  background: #243245;
+  border: 1px solid #7fb2ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: #e6f0ff;
+}
+.card-name { font-size: 12px; font-weight: bold; text-align: center; margin-top: 2px; color: #e6f0ff; }
+.card-type { font-size: 10px; text-align: center; margin: 2px 0; }
+.card-type-attack { color: #ff9e9e; }
+.card-type-skill { color: #9effce; }
+.card-type-power { color: #ffd68a; }
+.card-text { font-size: 10px; color: #cfe0ff; margin-top: 4px; line-height: 1.3; }
+
+.relic-choice { background: #2a1a10; border: 2px solid #ff9e44; }
+.relic-name { color: #ff9e44; }
+.potion-choice { background: #1a1a2a; border: 2px solid #dda0ff; }
+.potion-name { color: #dda0ff; }
+
+/* ===================== HAND ===================== */
+.hand-section { margin-top: 20px; }
+.hand-title { font-size: 12px; color: #5a7a9a; margin-bottom: 6px; }
+.hand-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ===================== REWARDS ===================== */
+.reward-section { margin: 16px 0; }
+.reward-title { font-size: 14px; font-weight: bold; color: #e6f0ff; margin-bottom: 10px; }
+.reward-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ===================== SHOP ===================== */
+.shop-section { margin: 16px 0; }
+.shop-title { font-size: 18px; font-weight: bold; color: #ffd68a; text-align: center; margin-bottom: 12px; }
+.shop-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.shop-item {
+  width: 160px; min-height: 110px; padding: 10px;
+  border-radius: 6px; cursor: pointer;
+  display: flex; flex-direction: column;
+  transition: transform 0.15s;
+}
+.shop-item:hover { transform: translateY(-4px); }
+.shop-item.sold { background: #1a1a1a; border: 1px solid #333; cursor: default; }
+.shop-item.sold:hover { transform: none; }
+.shop-item.unaffordable { opacity: 0.5; }
+.sold-text { color: #555; font-weight: bold; text-align: center; margin: auto; }
+.shop-card { background: #1b2533; border: 2px solid #9cc1ff; }
+.shop-potion { background: #1a1a2a; border: 2px solid #dda0ff; }
+.shop-relic { background: #2a1a10; border: 2px solid #ff9e44; }
+.shop-remove { background: #2a1010; border: 2px solid #ff6b6b; }
+.shop-item-name { font-size: 12px; font-weight: bold; color: #e6f0ff; }
+.shop-item-type { font-size: 10px; color: #9cc1ff; }
+.shop-item-text { font-size: 10px; color: #cfe0ff; margin: 4px 0; flex: 1; }
+.shop-item-price { font-size: 12px; font-weight: bold; color: #ffd68a; text-align: center; margin-top: 6px; }
+
+/* ===================== SCRY ===================== */
+.scry-section { text-align: center; padding: 40px; }
+.scry-title { font-size: 18px; font-weight: bold; color: #e6f0ff; margin-bottom: 16px; }
+.scry-cards { font-size: 14px; color: #cfe0ff; margin-bottom: 20px; }
+.scry-buttons { display: flex; gap: 10px; justify-content: center; }
+
+/* ===================== REMOVAL ===================== */
+.removal-section { padding: 20px; }
+.removal-title { font-size: 14px; font-weight: bold; color: #e6f0ff; margin-bottom: 12px; }
+.removal-list { max-height: 400px; overflow-y: auto; }
+.removal-item {
+  padding: 8px 12px;
+  background: #1a2330;
+  border: 1px solid #2a3a4f;
+  margin: 4px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #cfe0ff;
+}
+.removal-item:hover { background: #2a3040; border-color: #ff6b6b; }
+.removal-common { border-left: 3px solid #9cc1ff; }
+.removal-uncommon { border-left: 3px solid #5aff8a; }
+.removal-rare { border-left: 3px solid #ff9e44; }
+
+/* ===================== DEATH ===================== */
+.death-section {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 60vh; text-align: center;
+}
+.death-title { font-size: 28px; font-weight: bold; color: #ff8393; margin-bottom: 16px; }
+.death-info { font-size: 14px; color: #cfe0ff; margin-bottom: 8px; }
+.death-points { font-size: 13px; color: #ffaa8a; margin-bottom: 16px; }
+.death-hint { font-size: 13px; color: #9cc1ff; }
+
+/* ===================== LEGACY ===================== */
+.legacy-section { padding: 20px; }
+.legacy-title { font-size: 18px; font-weight: bold; color: #ffaa8a; text-align: center; margin-bottom: 8px; }
+.legacy-stats { font-size: 12px; color: #9cc1ff; text-align: center; margin-bottom: 16px; }
+.legacy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 700px; margin: 0 auto; }
+.legacy-item {
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.legacy-item:hover { transform: translateY(-2px); }
+.legacy-item.maxed { background: #1a2a1a; border: 2px solid #4adc8f; }
+.legacy-item.buyable { background: #1a1a2a; border: 2px solid #8ab8ff; }
+.legacy-item.locked { background: #111; border: 2px solid #333; }
+.legacy-name { font-size: 12px; font-weight: bold; color: #e6f0ff; }
+.legacy-item.maxed .legacy-name { color: #4adc8f; }
+.legacy-desc { font-size: 11px; color: #9cc1ff; margin-top: 4px; }
+.legacy-item.locked .legacy-desc { color: #555; }
+.legacy-cost { font-size: 11px; font-weight: bold; color: #ffd68a; margin-top: 4px; }
+.legacy-item.locked .legacy-cost { color: #553a1a; }
+.legacy-hint { text-align: center; color: #5a7a9a; font-size: 12px; margin-top: 16px; }
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 768px) {
+  #app { flex-direction: column; }
+  #sidebar {
+    width: 100%;
+    min-width: unset;
+    border-left: none;
+    border-top: 1px solid #1a2330;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 10px;
+    gap: 6px;
+  }
+  .card { width: 130px; min-height: 90px; font-size: 11px; }
+  .legacy-grid { grid-template-columns: 1fr; }
+  .energy-orb { width: 40px; height: 40px; font-size: 18px; }
+}
