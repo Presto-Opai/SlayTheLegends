@@ -266,7 +266,7 @@ class Game {
       case "gargantuaStep": this.dealDamage(9, "You"); this.draw(1); return "Stomp for 9; drew 1.";
       case "chateauRuse": this.applyWeak(1); this.applyVuln(1); return "Cunning: 1 Weak + 1 Vuln.";
       case "bayardHoofbeat": this.dealDamage(4, "You"); this.dealDamage(4, "You"); return "Hoofbeat 4x2.";
-      case "louPastreBallad": this.player.song_block += 2; return "Ballad: +2 end-of-turn block.";
+      case "louPastreBallad": this.player.song_block += 2; return "Ballad: +2 block at start of turn.";
       case "feesOrb": this.heal(3); this.draw(1); return "Fairies: heal 3, drew 1.";
       case "catharResolve": this.gainBlock(9); this.player.weak = Math.max(0, this.player.weak - 1); return "Resolve: +9 block; cleansed 1 Weak.";
       case "mazzeruVision": this.revealIntents(2); this.draw(1); return "The mazzeru sees what comes...";
@@ -312,6 +312,7 @@ class Game {
       hp: template.max_hp, block: 0, vuln: 0, weak: 0, enrage_stacks: 0
     };
     this.damageTakenThisCombat = 0;
+    this.player.song_block = 0;
     this.turnNumber = 0;
     this.revealedIntents = [];
     this.rampageBonus = {};
@@ -330,12 +331,12 @@ class Game {
     this.energy = 3 + this.nextEnergy;
     this.nextEnergy = 0;
     this.player.block = 0;
+    if (this.player.song_block > 0) this.player.block += this.player.song_block;
     if (this.hasRelic("Horn Cleat") && this.turnNumber === 2) this.energy += 1;
     this.draw(this.handsize);
   }
 
   endPlayerTurn() {
-    if (this.player.song_block > 0) this.player.block += this.player.song_block;
     if (this.hasRelic("Orichalcum") && this.player.block === 0) this.player.block += 6;
 
     this.enemyAct();

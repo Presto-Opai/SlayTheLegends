@@ -80,7 +80,7 @@ function makeCardDB() {
   add("Smugglers' Wile", 1, "Skill", "Draw 2. Discard 1.", "smugglersWile");
 
   // Occitanie
-  add("Lou Pastre Ballad", 1, "Power", "At end of turn, gain 2 block.", "louPastreBallad", "uncommon");
+  add("Lou Pastre Ballad", 1, "Power", "Start each turn with 2 block.", "louPastreBallad", "uncommon");
   add("Fées de l'Orb", 1, "Skill", "Heal 3. Draw 1.", "feesOrb");
   add("Cathar Resolve", 2, "Skill", "Gain 9 block. Remove Weak from you.", "catharResolve", "uncommon");
 
