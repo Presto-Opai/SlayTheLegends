@@ -111,13 +111,14 @@ button { cursor: pointer; font-family: inherit; }
 .enemy-section { margin-bottom: 16px; max-width: 600px; }
 .enemy-stats { font-size: 12px; color: #9cc1ff; margin: 4px 0; }
 .enemy-special { font-size: 12px; color: #ff6b6b; font-style: italic; }
+.enemy-lore { font-size: 11px; color: #7a8a9a; font-style: italic; margin-top: 2px; }
 .enemy-intent { font-size: 13px; font-weight: bold; margin: 4px 0; }
 .intent-attack { color: #ff8393; }
 .intent-block { color: #8affdb; }
 .revealed-intents { font-size: 12px; color: #7a6aff; }
 
 /* ===================== PLAYER ===================== */
-.player-section { margin-bottom: 16px; max-width: 600px; position: relative; }
+.player-section { margin-bottom: 16px; max-width: 600px; position: relative; padding-right: 60px; }
 .player-stats { font-size: 12px; color: #9cc1ff; margin: 4px 0; }
 .energy-orb {
   position: absolute;

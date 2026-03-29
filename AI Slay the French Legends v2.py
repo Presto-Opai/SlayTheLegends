@@ -82,7 +82,7 @@ def make_card_db():
         (lambda g: (g.change_energy(2), g.draw(1), "+2 energy, drew 1. Exhausted.")[-1]), "rare")
     add("Whirlwind", 0, "Attack", "Deal 4 damage X times (X = energy). Spend all energy.",
         None, "rare")  # special
-    add("Second Wind", 1, "Skill", "Gain 5 block for each card in hand.",
+    add("Second Wind", 1, "Skill", "Gain 3 block for each card in hand.",
         None, "uncommon")  # special
     add("Blood Pact", 0, "Attack", "Lose 3 HP. Deal 12 damage.",
         (lambda g: (g.self_damage(3), g.deal_damage(12, "You"), "Blood for power: 12 dmg!")[-1]), "uncommon")
@@ -216,56 +216,77 @@ POTIONS = [
 
 # ---------------------- Enemies ----------------------
 ENEMIES = [
-    # Early game
+    # Tier 1 — Common creatures of French folklore
     {"name": "Loup-Garou", "max_hp": 42, "atk_min": 6, "atk_max": 9, "block_chance": 0.20,
-     "special": None, "tier": 1},
+     "special": None, "tier": 1,
+     "lore": "A cursed soul doomed to prowl the countryside under the full moon."},
     {"name": "Bête du Gévaudan", "max_hp": 48, "atk_min": 7, "atk_max": 11, "block_chance": 0.25,
-     "special": None, "tier": 1},
+     "special": None, "tier": 1,
+     "lore": "The infamous beast that terrorized Gévaudan from 1764 to 1767, killing over 100 victims."},
     {"name": "Korrigan", "max_hp": 35, "atk_min": 5, "atk_max": 8, "block_chance": 0.15,
-     "special": "steal_energy", "tier": 1},
+     "special": "steal_energy", "tier": 1,
+     "lore": "Mischievous Breton dwarf-spirits who dance around dolmens at night and punish the rude."},
+    {"name": "Maître Renard", "max_hp": 38, "atk_min": 5, "atk_max": 9, "block_chance": 0.20,
+     "special": "trickster", "tier": 1,
+     "lore": "The cunning fox from the Roman de Renart, who outwits every beast in the kingdom."},
 
-    # Mid game
+    # Tier 2 — Regional legends
     {"name": "Tarasque", "max_hp": 60, "atk_min": 6, "atk_max": 9, "block_chance": 0.35,
-     "special": "thorns", "tier": 2},
+     "special": "thorns", "tier": 2,
+     "lore": "Dragon-turtle of the Rhône, tamed only by Saint Martha of Tarascon."},
     {"name": "Ankou", "max_hp": 55, "atk_min": 8, "atk_max": 12, "block_chance": 0.30,
-     "special": "life_drain", "tier": 2},
+     "special": "life_drain", "tier": 2,
+     "lore": "Breton personification of Death, driving a creaking cart to collect the departed."},
     {"name": "Drac", "max_hp": 52, "atk_min": 9, "atk_max": 13, "block_chance": 0.20,
-     "special": "multi_hit", "tier": 2},
+     "special": "multi_hit", "tier": 2,
+     "lore": "Shape-shifting water dragon of the Rhône who lures victims beneath the current."},
     {"name": "Dame Blanche", "max_hp": 45, "atk_min": 5, "atk_max": 7, "block_chance": 0.40,
-     "special": "weaken_player", "tier": 2},
+     "special": "weaken_player", "tier": 2,
+     "lore": "Spectral lady haunting bridges and castles, demanding a dance — or cursing those who refuse."},
+    {"name": "Jean de l'Ours", "max_hp": 62, "atk_min": 7, "atk_max": 10, "block_chance": 0.30,
+     "special": "auto_block", "tier": 2,
+     "lore": "Half-man, half-bear of the Pyrenees — born of a woman stolen by a bear, strong as iron."},
 
-    # Late game
-    {"name": "Gargantua (shade)", "max_hp": 75, "atk_min": 10, "atk_max": 14, "block_chance": 0.25,
-     "special": "crush", "tier": 3},
+    # Tier 3 — Legendary terrors
+    {"name": "Gargantua", "max_hp": 75, "atk_min": 10, "atk_max": 14, "block_chance": 0.25,
+     "special": "crush", "tier": 3,
+     "lore": "Rabelais' giant king whose appetite shaped the very landscape of France."},
     {"name": "Mélusine", "max_hp": 68, "atk_min": 8, "atk_max": 11, "block_chance": 0.30,
-     "special": "regen", "tier": 3},
+     "special": "regen", "tier": 3,
+     "lore": "Serpent-fairy of Lusignan, cursed to transform each Saturday — ancestress of royal bloodlines."},
     {"name": "Le Diable de Laval", "max_hp": 85, "atk_min": 11, "atk_max": 16, "block_chance": 0.20,
-     "special": "enrage", "tier": 3},
+     "special": "enrage", "tier": 3,
+     "lore": "The Devil himself appeared in Laval in 1453, setting fire to the town in a single night."},
+    {"name": "La Vouivre", "max_hp": 72, "atk_min": 9, "atk_max": 13, "block_chance": 0.25,
+     "special": "venom", "tier": 3,
+     "lore": "Winged serpent of Franche-Comté, guarding treasure with a blazing ruby on its brow."},
 
-    # Boss
+    # Tier 4 — Bosses
     {"name": "Grand Veneur", "max_hp": 100, "atk_min": 12, "atk_max": 18, "block_chance": 0.30,
-     "special": "summon_hounds", "tier": 4},
+     "special": "summon_hounds", "tier": 4,
+     "lore": "Phantom huntsman of Fontainebleau forest, whose spectral pack was witnessed by Henri IV himself."},
     {"name": "Fée Morgane", "max_hp": 90, "atk_min": 9, "atk_max": 13, "block_chance": 0.35,
-     "special": "mirror", "tier": 4},
+     "special": "mirror", "tier": 4,
+     "lore": "Enchantress of Brocéliande, half-sister of King Arthur, mistress of illusions and fate."},
 ]
 
 # ---------------------- Meta Progression ----------------------
 META_UPGRADES = [
-    {"id": "max_hp", "name": "Vitalité", "desc": "+5 PV max par rang",
+    {"id": "max_hp", "name": "Vitality", "desc": "+5 max HP per rank",
      "max_rank": 6, "base_cost": 15, "cost_inc": 10},
-    {"id": "start_gold", "name": "Héritage d'Or", "desc": "+15 or de départ par rang",
+    {"id": "start_gold", "name": "Golden Heritage", "desc": "+15 starting gold per rank",
      "max_rank": 5, "base_cost": 10, "cost_inc": 8},
-    {"id": "start_str", "name": "Force Ancestrale", "desc": "+1 Force de départ par rang",
+    {"id": "start_str", "name": "Ancestral Strength", "desc": "+1 starting Strength per rank",
      "max_rank": 3, "base_cost": 30, "cost_inc": 25},
-    {"id": "potion_slot", "name": "Sacoche", "desc": "+1 emplacement de potion",
+    {"id": "potion_slot", "name": "Satchel", "desc": "+1 potion slot",
      "max_rank": 2, "base_cost": 25, "cost_inc": 30},
-    {"id": "start_potion", "name": "Préparation", "desc": "Commence avec une potion aléatoire",
+    {"id": "start_potion", "name": "Preparation", "desc": "Start with a random potion",
      "max_rank": 1, "base_cost": 20, "cost_inc": 0},
-    {"id": "card_draw", "name": "Perspicacité", "desc": "+1 carte piochée par tour",
+    {"id": "card_draw", "name": "Insight", "desc": "+1 card drawn per turn",
      "max_rank": 2, "base_cost": 40, "cost_inc": 35},
-    {"id": "start_armor", "name": "Peau Dure", "desc": "+1 armure passive par rang",
+    {"id": "start_armor", "name": "Tough Skin", "desc": "+1 passive armor per rank",
      "max_rank": 3, "base_cost": 20, "cost_inc": 15},
-    {"id": "heal_on_win", "name": "Second Souffle", "desc": "+3 soin après chaque combat par rang",
+    {"id": "heal_on_win", "name": "Second Breath", "desc": "+3 heal after each combat per rank",
      "max_rank": 4, "base_cost": 12, "cost_inc": 10},
 ]
 
@@ -372,7 +393,7 @@ class Game:
         self.discard = []
         self.hand = []
         self.exhaust = []
-        self.log = "Bienvenue, héros !"
+        self.log = "Welcome, hero!"
         self.enemy = None
         self.enemy_intent = {"type": "attack", "value": 6}
         self.handsize = 5 + self.meta.rank("card_draw")
@@ -551,19 +572,18 @@ class Game:
         weights = [e["tier"] ** 2 for e in candidates]
         template = random.choices(candidates, weights=weights, k=1)[0].copy()
 
-        # Scaling: gentle early, sharp after floor 30
+        # Scaling: steep early, punishing after floor 20
         lvl = self.level
-        if lvl <= 30:
-            scale = 1.0 + 0.10 * lvl
+        if lvl <= 20:
+            scale = 1.0 + 0.18 * lvl
         else:
-            # Base from floor 30 + accelerating growth beyond
-            over = lvl - 30
-            scale = 4.0 + 0.25 * over + 0.01 * over * over
+            over = lvl - 20
+            scale = 4.6 + 0.35 * over + 0.02 * over * over
         template["max_hp"] = int(template["max_hp"] * scale)
         template["atk_min"] = int(template["atk_min"] * scale)
         template["atk_max"] = int(template["atk_max"] * scale)
         self.enemy = {**template, "hp": template["max_hp"], "block": 0, "vuln": 0, "weak": 0,
-                      "enrage_stacks": 0}
+                      "enrage_stacks": 0, "lore": template.get("lore", "")}
         self.damage_taken_this_combat = 0
         self.turn_number = 0
         self.revealed_intents = []
@@ -580,7 +600,7 @@ class Game:
         self.in_reward = False
         self.start_player_turn()
         self.pick_enemy_intent()
-        self.log = f"Un {self.enemy['name']} apparaît !"
+        self.log = f"A {self.enemy['name']} appears!"
 
     def start_player_turn(self):
         self.turn_number += 1
@@ -643,6 +663,11 @@ class Game:
 
     def enemy_act(self):
         special = self.enemy.get("special")
+        # Auto-block: Jean de l'Ours gains block each turn passively
+        if special == "auto_block":
+            ab = 5 + int(self.turn_number * 1.5)
+            self.enemy["block"] += ab
+            self.log = f"{self.enemy['name']} braces with bear-strength (+{ab} block). "
         if self.enemy_intent["type"] == "attack":
             hits = self.enemy_intent.get("hits", 1)
             total = 0
@@ -705,6 +730,26 @@ class Game:
             self.enemy["block"] += 8
             self.log += " Mirror: +8 block!"
 
+        if special == "trickster" and random.random() < 0.35:
+            trick = random.randint(0, 2)
+            if trick == 0:
+                self.player["weak"] += 1
+                self.log += " Renard's trick: 1 Weak!"
+            elif trick == 1:
+                self.enemy["block"] += 6
+                self.log += " Renard dodges behind cover (+6 block)!"
+            else:
+                if self.hand:
+                    thrown = self.hand.pop()
+                    self.discard.append(thrown)
+                    self.log += " Renard steals a card from your hand!"
+
+        if special == "venom":
+            vdmg = 3 + self.turn_number
+            self.player["hp"] -= vdmg
+            self.clamp()
+            self.log += f" Vouivre's venom burns for {vdmg}!"
+
     def play_card(self, idx):
         if self.in_reward:
             return
@@ -714,7 +759,7 @@ class Game:
         card = self.hand[idx]
 
         if card["cost"] > self.energy:
-            self.log = "Pas assez d'énergie."
+            self.log = "Not enough energy."
             self.app.redraw()
             return
 
@@ -770,9 +815,9 @@ class Game:
 
         if played["name"] == "Second Wind":
             cards_in_hand = len(self.hand)
-            self.gain_block(5 * cards_in_hand)
+            self.gain_block(3 * cards_in_hand)
             self.discard_or_exhaust(played)
-            self.log = f"Second Wind: +{5 * cards_in_hand} block ({cards_in_hand} cards)!"
+            self.log = f"Second Wind: +{3 * cards_in_hand} block ({cards_in_hand} cards)!"
             self.app.redraw()
             return
 
@@ -785,7 +830,7 @@ class Game:
             next_dmg = 8 + bonus + 4
             played["text"] = f"Deal {next_dmg} damage. +4 per play this combat."
             self.discard_or_exhaust(played)
-            self.log = f"Rampage: {base_dmg} dégâts."
+            self.log = f"Rampage: {base_dmg} damage."
             if self.enemy["hp"] <= 0:
                 self.app.root.after_idle(self.win_battle)
                 return
@@ -917,13 +962,13 @@ class Game:
         if roll < 0.15 and len(self.potions) < self.max_potions:
             self.reward_type = "potion"
             self.reward_choices = random.sample(POTIONS, k=min(3, len(POTIONS)))
-            self.log = f"Victoire ! +{gold_gain} or. Choisissez une potion."
+            self.log = f"Victory! +{gold_gain} gold. Choose a potion."
         elif roll < 0.25 and self.level % 3 == 0:
             self.reward_type = "relic"
             available = [r for r in RELICS if not self.has_relic(r["name"])]
             if available:
                 self.reward_choices = random.sample(available, k=min(3, len(available)))
-                self.log = f"Victoire ! +{gold_gain} or. Choisissez une relique !"
+                self.log = f"Victory! +{gold_gain} gold. Choose a relic!"
             else:
                 self._card_reward(gold_gain)
         else:
@@ -948,7 +993,7 @@ class Game:
         unique_pool = list(set(pool))
         choices = random.sample(unique_pool, k=min(3, len(unique_pool)))
         self.reward_choices = [CARD_DB[n].copy() for n in choices if n in CARD_DB]
-        self.log = f"Victoire ! +{gold_gain} or. Choisissez une carte ({region})."
+        self.log = f"Victory! +{gold_gain} gold. Choose a card ({region})."
 
     def take_reward(self, i):
         if not self.in_reward:
@@ -957,19 +1002,19 @@ class Game:
             choice = self.reward_choices[i]
             if self.reward_type == "card":
                 self.deck.append(choice.copy())
-                self.log = f"Ajouté: {choice['name']}."
+                self.log = f"Added: {choice['name']}."
             elif self.reward_type == "relic":
                 self.relics.append(choice.copy())
                 # Apply immediate relic effects
                 if choice["effect"] == "strength":
                     self.player["strength"] += choice["value"]
-                self.log = f"Relique: {choice['name']} — {choice['desc']}"
+                self.log = f"Relic: {choice['name']} — {choice['desc']}"
             elif self.reward_type == "potion":
                 if len(self.potions) < self.max_potions:
                     self.potions.append(choice.copy())
                     self.log = f"Potion: {choice['name']}."
                 else:
-                    self.log = "Inventaire de potions plein !"
+                    self.log = "Potion inventory full!"
                     return
         else:
             self.log = "Pass."
@@ -1021,7 +1066,7 @@ class Game:
         self.shop_items.append({"item": {"name": "Remove a card", "desc": "Remove a card from your deck."},
                                 "price": 50 + self.level * 5, "type": "remove", "sold": False})
 
-        self.log = f"Bienvenue à la boutique ! Or: {self.gold}"
+        self.log = f"Welcome to the shop! Gold: {self.gold}"
         self.app.redraw()
 
     def buy_shop_item(self, idx):
@@ -1031,11 +1076,11 @@ class Game:
             return
         item = self.shop_items[idx]
         if item["sold"]:
-            self.log = "Déjà acheté."
+            self.log = "Already bought."
             self.app.redraw()
             return
         if self.gold < item["price"]:
-            self.log = "Pas assez d'or !"
+            self.log = "Not enough gold!"
             self.app.redraw()
             return
 
@@ -1044,20 +1089,20 @@ class Game:
 
         if item["type"] == "card":
             self.deck.append(item["item"].copy())
-            self.log = f"Acheté: {item['item']['name']} pour {item['price']} or."
+            self.log = f"Bought: {item['item']['name']} for {item['price']} gold."
         elif item["type"] == "potion":
             if len(self.potions) < self.max_potions:
                 self.potions.append(item["item"].copy())
-                self.log = f"Potion achetée: {item['item']['name']}."
+                self.log = f"Potion bought: {item['item']['name']}."
             else:
                 self.gold += item["price"]
                 item["sold"] = False
-                self.log = "Inventaire de potions plein !"
+                self.log = "Potion inventory full!"
         elif item["type"] == "relic":
             self.relics.append(item["item"].copy())
             if item["item"].get("effect") == "strength":
                 self.player["strength"] += item["item"]["value"]
-            self.log = f"Relique achetée: {item['item']['name']}."
+            self.log = f"Relic bought: {item['item']['name']}."
         elif item["type"] == "remove":
             self.show_card_removal()
             return
@@ -1067,10 +1112,10 @@ class Game:
     def show_card_removal(self):
         """Show a dialog to pick which card to remove from deck."""
         top = tk.Toplevel(self.app.root)
-        top.title("Retirer une carte")
+        top.title("Remove a card")
         top.configure(bg="#101418")
         top.geometry("400x500")
-        tk.Label(top, text="Choisissez une carte à retirer du deck:",
+        tk.Label(top, text="Choose a card to remove from your deck:",
                  fg="#e6f0ff", bg="#101418", font=("Segoe UI", 11, "bold")).pack(pady=10)
 
         frame = tk.Frame(top, bg="#101418")
@@ -1097,11 +1142,11 @@ class Game:
             for si in self.shop_items:
                 if si["type"] == "remove":
                     si["sold"] = True
-            self.log = f"Retiré: {removed['name']} du deck."
+            self.log = f"Removed: {removed['name']} from deck."
             top.destroy()
             self.app.redraw()
 
-        tk.Button(top, text="Retirer", command=do_remove,
+        tk.Button(top, text="Remove", command=do_remove,
                   bg="#4a1a1a", fg="#ff8393", relief="flat", padx=12, pady=4).pack(pady=10)
 
     def leave_shop(self):
@@ -1196,7 +1241,7 @@ class Game:
         g.revealed_intents = []
         g.turn_number = data.get("turn_number", 0)
         g.exhaust = []
-        g.log = "Partie chargée !"
+        g.log = "Game loaded!"
         g.in_reward = data.get("in_reward", False)
         g.in_shop = data.get("in_shop", False)
         g.shop_items = []
@@ -1250,8 +1295,8 @@ class Game:
         self.in_shop = False
         # Record meta-progression on death
         points = self.meta.record_run(self.level, self.kills)
-        self.log = (f"Vous tombez au niveau {self.level}… +{points} points de legs !"
-                    f"\n(R = recommencer, L = legs)")
+        self.log = (f"You fell at floor {self.level}... +{points} legacy points!"
+                    f"\n(R = restart, L = legacy)")
         # Delete run save on death
         self.delete_run_save()
         self.app.redraw()
@@ -1264,7 +1309,7 @@ GAP = 10
 class App:
     def __init__(self, root):
         self.root = root
-        root.title("Légendes de France v2 — Deck-Builder")
+        root.title("Legends of France v2 — Deck-Builder")
         root.configure(bg="#0d1117")
 
         # Make window resizable and adapt
@@ -1284,7 +1329,7 @@ class App:
         self.panel.pack(side="right", fill="y")
         self.panel.pack_propagate(False)
 
-        self.lbl = tk.Label(self.panel, text="LÉGENDES DE FRANCE", fg="#e6f0ff", bg="#0d1117",
+        self.lbl = tk.Label(self.panel, text="LEGENDS OF FRANCE", fg="#e6f0ff", bg="#0d1117",
                             font=("Segoe UI", 14, "bold"))
         self.lbl.pack(pady=(10, 2))
 
@@ -1382,7 +1427,7 @@ class App:
         if self.game.player["hp"] <= 0:
             return
         self.game.save_run()
-        self.game.log = "Partie sauvegardée !"
+        self.game.log = "Game saved!"
         self.redraw()
 
     def load_game(self):
@@ -1392,7 +1437,7 @@ class App:
             self.showing_legacy = False
             self.redraw()
         else:
-            self.game.log = "Aucune sauvegarde trouvée."
+            self.game.log = "No save found."
             self.redraw()
 
     def show_legacy(self):
@@ -1434,10 +1479,19 @@ class App:
                 "enrage": f"Enrage (+{g.enemy.get('enrage_stacks', 0)})",
                 "summon_hounds": "Hound Master",
                 "mirror": "Mirror Shield",
+                "auto_block": "Bear Hide (auto-block)",
+                "trickster": "Trickster",
+                "venom": "Venomous",
             }
             sname = special_names.get(special, special)
             self.c.create_text(margin, 100, anchor="w", fill="#ff6b6b",
                                font=("Segoe UI", 9, "italic"), text=f"Ability: {sname}")
+
+        # Lore
+        lore = g.enemy.get("lore", "")
+        if lore:
+            self.c.create_text(margin, 115, anchor="w", fill="#7a8a9a",
+                               font=("Segoe UI", 8, "italic"), text=lore, width=bar_w)
 
         # Intent
         if g.enemy_intent["type"] != "none":
@@ -1463,13 +1517,13 @@ class App:
 
         # Player area
         py = 180
-        self.draw_bar(margin, py, 280, 20, g.player["hp"], g.player["max_hp"],
+        self.draw_bar(margin, py, 250, 20, g.player["hp"], g.player["max_hp"],
                       label="Your HP", col="#4adc8f")
         self.c.create_text(margin, py + 38, anchor="w", fill="#9cc1ff",
                            text=f"Block: {g.player['block']}  STR: {g.player['strength']}  Armor: {g.player['armor']}")
 
-        # Energy display (bigger)
-        energy_x = margin + 320
+        # Energy display (bigger) — offset right to avoid overlapping HP bar
+        energy_x = margin + 290
         self.c.create_oval(energy_x, py, energy_x + 40, py + 40,
                            fill="#1b3555", outline="#4a9eff", width=2)
         self.c.create_text(energy_x + 20, py + 20, text=str(g.energy),
@@ -1490,7 +1544,7 @@ class App:
             reward_label = {"card": "Choose a card", "relic": "Choose a relic", "potion": "Choose a potion"}
             self.c.create_text(margin, ry - 10, anchor="w", fill="#e6f0ff",
                                font=("Segoe UI", 11, "bold"),
-                               text=f"Récompense: {reward_label.get(g.reward_type, 'Choose')}")
+                               text=f"Reward: {reward_label.get(g.reward_type, 'Choose')}")
 
             total_w = len(g.reward_choices) * (CARD_W + GAP) - GAP
             start_x = max(margin, (cw - total_w) // 2)
@@ -1552,16 +1606,16 @@ class App:
         if g.player["hp"] <= 0:
             self.c.create_rectangle(0, 0, cw, ch, fill="#000000", stipple="gray50", outline="")
             self.c.create_text(cw // 2, ch // 2 - 40,
-                               text="DÉFAITE",
+                               text="DEFEAT",
                                fill="#ff8393", font=("Segoe UI", 22, "bold"))
             self.c.create_text(cw // 2, ch // 2,
-                               text=f"Niveau atteint: {g.level}  —  Ennemis: {g.kills}  —  Or: {g.gold}",
+                               text=f"Floor reached: {g.level}  —  Enemies: {g.kills}  —  Gold: {g.gold}",
                                fill="#cfe0ff", font=("Segoe UI", 12))
             self.c.create_text(cw // 2, ch // 2 + 30,
-                               text=f"Points de legs gagnés: +{g.level * 3 + g.kills + (10 if g.level >= 5 else 0) + (20 if g.level >= 10 else 0)}",
+                               text=f"Legacy points earned: +{g.level * 3 + g.kills + (10 if g.level >= 5 else 0) + (20 if g.level >= 10 else 0)}",
                                fill="#ffaa8a", font=("Segoe UI", 11))
             self.c.create_text(cw // 2, ch // 2 + 65,
-                               text="R = recommencer    L = legs (améliorations)",
+                               text="R = restart    L = legacy (upgrades)",
                                fill="#9cc1ff", font=("Segoe UI", 11))
 
     def draw_bar(self, x, y, w, h, now, mx, label="", col="#e95f67"):
@@ -1649,9 +1703,9 @@ class App:
         g = self.game
 
         # Title
-        self.c.create_text(cw // 2, 50, text="BOUTIQUE",
+        self.c.create_text(cw // 2, 50, text="SHOP",
                            fill="#ffd68a", font=("Segoe UI", 16, "bold"))
-        self.c.create_text(cw // 2, 75, text=f"Or disponible: {g.gold}",
+        self.c.create_text(cw // 2, 75, text=f"Available gold: {g.gold}",
                            fill="#ffd68a", font=("Segoe UI", 11))
 
         # Layout shop items in a grid
@@ -1676,7 +1730,7 @@ class App:
                 self.c.create_rectangle(x, y, x + item_w, y + item_h,
                                         fill="#1a1a1a", outline="#333", width=1, tags=(tag,))
                 self.c.create_text(x + item_w / 2, y + item_h / 2,
-                                   text="VENDU", fill="#555",
+                                   text="SOLD", fill="#555",
                                    font=("Segoe UI", 10, "bold"), tags=(tag,))
                 continue
 
@@ -1743,7 +1797,7 @@ class App:
             # Price tag
             price_col = "#ffd68a" if affordable else "#553a1a"
             self.c.create_text(x + item_w / 2, y + item_h - 10,
-                               text=f"{price} or", fill=price_col,
+                               text=f"{price} gold", fill=price_col,
                                font=("Segoe UI", 9, "bold"), tags=(tag,))
 
     def draw_legacy_screen(self, cw, ch):
@@ -1751,10 +1805,10 @@ class App:
         self.c.create_rectangle(0, 0, cw, ch, fill="#0a0e14", outline="")
 
         m = self.meta
-        self.c.create_text(cw // 2, 30, text="LEGS — Améliorations Permanentes",
+        self.c.create_text(cw // 2, 30, text="LEGACY — Permanent Upgrades",
                            fill="#ffaa8a", font=("Segoe UI", 16, "bold"))
         self.c.create_text(cw // 2, 55,
-                           text=f"Points de legs: {m.legacy_points}    |    Runs: {m.total_runs}    |    Meilleur: niveau {m.best_floor}    |    Kills: {m.total_kills}",
+                           text=f"Points: {m.legacy_points}    |    Runs: {m.total_runs}    |    Best: floor {m.best_floor}    |    Kills: {m.total_kills}",
                            fill="#9cc1ff", font=("Segoe UI", 10))
 
         # Draw upgrades in a grid
@@ -1817,7 +1871,7 @@ class App:
         # Instructions
         bottom_y = start_y + (math.ceil(len(META_UPGRADES) / cols)) * (item_h + gap) + 20
         self.c.create_text(cw // 2, bottom_y,
-                           text="Cliquez pour acheter  —  L pour fermer",
+                           text="Click to buy  —  L to close",
                            fill="#5a7a9a", font=("Segoe UI", 10))
 
     def wrap_text(self, s, n):
@@ -1855,7 +1909,7 @@ class App:
                 idx = int(t.split("_")[1])
                 u = META_UPGRADES[idx]
                 if self.meta.buy(u["id"]):
-                    self.game.log = f"Amélioration: {u['name']} rang {self.meta.rank(u['id'])} !"
+                    self.game.log = f"Upgrade: {u['name']} rank {self.meta.rank(u['id'])}!"
                 self.redraw()
                 return
 

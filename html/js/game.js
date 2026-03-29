@@ -88,7 +88,7 @@ class Game {
     this.discard = [];
     this.hand = [];
     this.exhaust = [];
-    this.log = "Bienvenue, héros !";
+    this.log = "Welcome, hero!";
     this.enemy = null;
     this.enemyIntent = { type: "attack", value: 6 };
     this.handsize = 5 + this.meta.rank("card_draw");
@@ -297,11 +297,11 @@ class Game {
 
     const lvl = this.level;
     let scale;
-    if (lvl <= 30) {
-      scale = 1.0 + 0.10 * lvl;
+    if (lvl <= 20) {
+      scale = 1.0 + 0.18 * lvl;
     } else {
-      const over = lvl - 30;
-      scale = 4.0 + 0.25 * over + 0.01 * over * over;
+      const over = lvl - 20;
+      scale = 4.6 + 0.35 * over + 0.02 * over * over;
     }
     template.max_hp = Math.floor(template.max_hp * scale);
     template.atk_min = Math.floor(template.atk_min * scale);
@@ -309,7 +309,8 @@ class Game {
 
     this.enemy = {
       ...template,
-      hp: template.max_hp, block: 0, vuln: 0, weak: 0, enrage_stacks: 0
+      hp: template.max_hp, block: 0, vuln: 0, weak: 0, enrage_stacks: 0,
+      lore: template.lore || null
     };
     this.damageTakenThisCombat = 0;
     this.player.song_block = 0;
@@ -323,7 +324,7 @@ class Game {
     this.inReward = false;
     this.startPlayerTurn();
     this.pickEnemyIntent();
-    this.log = `Un ${this.enemy.name} apparaît !`;
+    this.log = `A ${this.enemy.name} appears!`;
   }
 
   startPlayerTurn() {
@@ -375,6 +376,12 @@ class Game {
 
   enemyAct() {
     const special = this.enemy.special;
+    // Auto-block: Jean de l'Ours gains block each turn passively
+    if (special === "auto_block") {
+      const ab = 5 + Math.floor(this.turnNumber * 1.5);
+      this.enemy.block += ab;
+      this.log = `${this.enemy.name} braces with bear-strength (+${ab} block). `;
+    }
     if (this.enemyIntent.type === "attack") {
       const hits = this.enemyIntent.hits || 1;
       let total = 0;
@@ -431,13 +438,34 @@ class Game {
       this.enemy.block += 8;
       this.log += " Mirror: +8 block!";
     }
+    if (special === "trickster" && Math.random() < 0.35) {
+      const trick = Math.floor(Math.random() * 3);
+      if (trick === 0) {
+        this.player.weak += 1;
+        this.log += " Renard's trick: 1 Weak!";
+      } else if (trick === 1) {
+        this.enemy.block += 6;
+        this.log += " Renard dodges behind cover (+6 block)!";
+      } else {
+        if (this.hand.length > 0) {
+          this.discard.push(this.hand.pop());
+          this.log += " Renard steals a card from your hand!";
+        }
+      }
+    }
+    if (special === "venom") {
+      const vdmg = 3 + Math.floor(this.turnNumber);
+      this.player.hp -= vdmg;
+      this.clamp();
+      this.log += ` Vouivre's venom burns for ${vdmg}!`;
+    }
   }
 
   playCard(idx) {
     if (this.inReward || this.dead) return;
     if (idx < 0 || idx >= this.hand.length) return;
     const card = this.hand[idx];
-    if (card.cost > this.energy) { this.log = "Pas assez d'énergie."; return; }
+    if (card.cost > this.energy) { this.log = "Not enough energy."; return; }
 
     const played = this.hand.splice(idx, 1)[0];
     this.energy -= played.cost;
@@ -475,9 +503,9 @@ class Game {
     }
     if (played.effectKey === "secondWind") {
       const n = this.hand.length;
-      this.gainBlock(5 * n);
+      this.gainBlock(3 * n);
       this.discardOrExhaust(played);
-      this.log = `Second Wind: +${5 * n} block (${n} cards)!`;
+      this.log = `Second Wind: +${3 * n} block (${n} cards)!`;
       return;
     }
     if (played.effectKey === "rampage") {
@@ -486,7 +514,7 @@ class Game {
       this.dealDamage(baseDmg, "You");
       this.rampageBonus["Rampage"] = bonus + 4;
       this.discardOrExhaust(played);
-      this.log = `Rampage: ${baseDmg} dégâts.`;
+      this.log = `Rampage: ${baseDmg} damage.`;
       if (this.enemy.hp <= 0) { this.winBattle(); return; }
       return;
     }
@@ -566,13 +594,13 @@ class Game {
     if (roll < 0.15 && this.potions.length < this.maxPotions) {
       this.rewardType = "potion";
       this.rewardChoices = this._sample(POTIONS, 3).map(p => ({ ...p }));
-      this.log = `Victoire ! +${goldGain} or. Choisissez une potion.`;
+      this.log = `Victory! +${goldGain} gold. Choose a potion.`;
     } else if (roll < 0.25 && this.level % 3 === 0) {
       this.rewardType = "relic";
       const available = RELICS.filter(r => !this.hasRelic(r.name));
       if (available.length > 0) {
         this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
-        this.log = `Victoire ! +${goldGain} or. Choisissez une relique !`;
+        this.log = `Victory! +${goldGain} gold. Choose a relic!`;
       } else {
         this._cardReward(goldGain);
       }
@@ -603,7 +631,7 @@ class Game {
     const unique = [...new Set(pool)];
     const choices = this._sample(unique, 3);
     this.rewardChoices = choices.filter(n => CARD_DB[n]).map(n => ({ ...CARD_DB[n] }));
-    this.log = `Victoire ! +${goldGain} or. Choisissez une carte (${region}).`;
+    this.log = `Victory! +${goldGain} gold. Choose a card (${region}).`;
   }
 
   takeReward(i) {
@@ -612,17 +640,17 @@ class Game {
       const choice = this.rewardChoices[i];
       if (this.rewardType === "card") {
         this.deck.push({ ...choice });
-        this.log = `Ajouté: ${choice.name}.`;
+        this.log = `Added: ${choice.name}.`;
       } else if (this.rewardType === "relic") {
         this.relics.push({ ...choice });
         if (choice.effect === "strength") this.player.strength += choice.value;
-        this.log = `Relique: ${choice.name} — ${choice.desc}`;
+        this.log = `Relic: ${choice.name} — ${choice.desc}`;
       } else if (this.rewardType === "potion") {
         if (this.potions.length < this.maxPotions) {
           this.potions.push({ ...choice });
           this.log = `Potion: ${choice.name}.`;
         } else {
-          this.log = "Inventaire de potions plein !";
+          this.log = "Potion inventory full!";
           return;
         }
       }
@@ -679,34 +707,34 @@ class Game {
       price: 50 + this.level * 5, type: "remove", sold: false
     });
 
-    this.log = `Bienvenue à la boutique ! Or: ${this.gold}`;
+    this.log = `Welcome to the shop! Gold: ${this.gold}`;
   }
 
   buyShopItem(idx) {
     if (!this.inShop || idx < 0 || idx >= this.shopItems.length) return;
     const item = this.shopItems[idx];
-    if (item.sold) { this.log = "Déjà acheté."; return; }
-    if (this.gold < item.price) { this.log = "Pas assez d'or !"; return; }
+    if (item.sold) { this.log = "Already bought."; return; }
+    if (this.gold < item.price) { this.log = "Not enough gold!"; return; }
 
     this.gold -= item.price;
     item.sold = true;
 
     if (item.type === "card") {
       this.deck.push({ ...item.item });
-      this.log = `Acheté: ${item.item.name} pour ${item.price} or.`;
+      this.log = `Bought: ${item.item.name} for ${item.price} gold.`;
     } else if (item.type === "potion") {
       if (this.potions.length < this.maxPotions) {
         this.potions.push({ ...item.item });
-        this.log = `Potion achetée: ${item.item.name}.`;
+        this.log = `Potion bought: ${item.item.name}.`;
       } else {
         this.gold += item.price;
         item.sold = false;
-        this.log = "Inventaire de potions plein !";
+        this.log = "Potion inventory full!";
       }
     } else if (item.type === "relic") {
       this.relics.push({ ...item.item });
       if (item.item.effect === "strength") this.player.strength += item.item.value;
-      this.log = `Relique achetée: ${item.item.name}.`;
+      this.log = `Relic bought: ${item.item.name}.`;
     } else if (item.type === "remove") {
       this._showingRemoval = true;
       return;
@@ -720,7 +748,7 @@ class Game {
       if (si.type === "remove") si.sold = true;
     }
     this._showingRemoval = false;
-    this.log = `Retiré: ${removed.name} du deck.`;
+    this.log = `Removed: ${removed.name} from deck.`;
   }
 
   leaveShop() {
@@ -782,7 +810,7 @@ class Game {
       g.revealedIntents = [];
       g.turnNumber = data.turnNumber || 0;
       g.exhaust = [];
-      g.log = "Partie chargée !";
+      g.log = "Game loaded!";
       g.inReward = data.inReward || false;
       g.inShop = data.inShop || false;
       g.shopItems = [];
@@ -822,7 +850,7 @@ class Game {
     this.inReward = false;
     this.inShop = false;
     const points = this.meta.recordRun(this.level, this.kills);
-    this.log = `Vous tombez au niveau ${this.level}… +${points} points de legs !`;
+    this.log = `You fell at floor ${this.level}... +${points} legacy points!`;
     this.deleteRunSave();
   }
 }

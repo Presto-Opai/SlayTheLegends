@@ -35,7 +35,7 @@ function makeCardDB() {
   // Neutral uncommon/rare
   add("Adrenaline Rush", 0, "Skill", "Gain 2 energy. Draw 1. Exhaust.", "adrenalineRush", "rare");
   add("Whirlwind", 0, "Attack", "Deal 4 damage X times (X = energy). Spend all energy.", "whirlwind", "rare");
-  add("Second Wind", 1, "Skill", "Gain 5 block for each card in hand.", "secondWind", "uncommon");
+  add("Second Wind", 1, "Skill", "Gain 3 block for each card in hand.", "secondWind", "uncommon");
   add("Blood Pact", 0, "Attack", "Lose 3 HP. Deal 12 damage.", "bloodPact", "uncommon");
   add("Perfect Guard", 2, "Skill", "Gain 16 block.", "block16", "uncommon");
   add("Rampage", 1, "Attack", "Deal 8 damage. +4 per play this combat.", "rampage", "uncommon");
@@ -124,27 +124,52 @@ const POTIONS = [
 ];
 
 const ENEMIES = [
-  { name: "Loup-Garou", max_hp: 42, atk_min: 6, atk_max: 9, block_chance: 0.20, special: null, tier: 1 },
-  { name: "Bête du Gévaudan", max_hp: 48, atk_min: 7, atk_max: 11, block_chance: 0.25, special: null, tier: 1 },
-  { name: "Korrigan", max_hp: 35, atk_min: 5, atk_max: 8, block_chance: 0.15, special: "steal_energy", tier: 1 },
-  { name: "Tarasque", max_hp: 60, atk_min: 6, atk_max: 9, block_chance: 0.35, special: "thorns", tier: 2 },
-  { name: "Ankou", max_hp: 55, atk_min: 8, atk_max: 12, block_chance: 0.30, special: "life_drain", tier: 2 },
-  { name: "Drac", max_hp: 52, atk_min: 9, atk_max: 13, block_chance: 0.20, special: "multi_hit", tier: 2 },
-  { name: "Dame Blanche", max_hp: 45, atk_min: 5, atk_max: 7, block_chance: 0.40, special: "weaken_player", tier: 2 },
-  { name: "Gargantua (shade)", max_hp: 75, atk_min: 10, atk_max: 14, block_chance: 0.25, special: "crush", tier: 3 },
-  { name: "Mélusine", max_hp: 68, atk_min: 8, atk_max: 11, block_chance: 0.30, special: "regen", tier: 3 },
-  { name: "Le Diable de Laval", max_hp: 85, atk_min: 11, atk_max: 16, block_chance: 0.20, special: "enrage", tier: 3 },
-  { name: "Grand Veneur", max_hp: 100, atk_min: 12, atk_max: 18, block_chance: 0.30, special: "summon_hounds", tier: 4 },
-  { name: "Fée Morgane", max_hp: 90, atk_min: 9, atk_max: 13, block_chance: 0.35, special: "mirror", tier: 4 },
+  // Tier 1 — Common creatures of French folklore
+  { name: "Loup-Garou", max_hp: 42, atk_min: 6, atk_max: 9, block_chance: 0.20, special: null, tier: 1,
+    lore: "A cursed soul doomed to prowl the countryside under the full moon." },
+  { name: "Bête du Gévaudan", max_hp: 48, atk_min: 7, atk_max: 11, block_chance: 0.25, special: null, tier: 1,
+    lore: "The infamous beast that terrorized Gévaudan from 1764 to 1767, killing over 100 victims." },
+  { name: "Korrigan", max_hp: 35, atk_min: 5, atk_max: 8, block_chance: 0.15, special: "steal_energy", tier: 1,
+    lore: "Mischievous Breton dwarf-spirits who dance around dolmens at night and punish the rude." },
+  { name: "Maître Renard", max_hp: 38, atk_min: 5, atk_max: 9, block_chance: 0.20, special: "trickster", tier: 1,
+    lore: "The cunning fox from the Roman de Renart, who outwits every beast in the kingdom." },
+
+  // Tier 2 — Regional legends
+  { name: "Tarasque", max_hp: 60, atk_min: 6, atk_max: 9, block_chance: 0.35, special: "thorns", tier: 2,
+    lore: "Dragon-turtle of the Rhône, tamed only by Saint Martha of Tarascon." },
+  { name: "Ankou", max_hp: 55, atk_min: 8, atk_max: 12, block_chance: 0.30, special: "life_drain", tier: 2,
+    lore: "Breton personification of Death, driving a creaking cart to collect the departed." },
+  { name: "Drac", max_hp: 52, atk_min: 9, atk_max: 13, block_chance: 0.20, special: "multi_hit", tier: 2,
+    lore: "Shape-shifting water dragon of the Rhône who lures victims beneath the current." },
+  { name: "Dame Blanche", max_hp: 45, atk_min: 5, atk_max: 7, block_chance: 0.40, special: "weaken_player", tier: 2,
+    lore: "Spectral lady haunting bridges and castles, demanding a dance — or cursing those who refuse." },
+  { name: "Jean de l'Ours", max_hp: 62, atk_min: 7, atk_max: 10, block_chance: 0.30, special: "auto_block", tier: 2,
+    lore: "Half-man, half-bear of the Pyrenees — born of a woman stolen by a bear, strong as iron." },
+
+  // Tier 3 — Legendary terrors
+  { name: "Gargantua", max_hp: 75, atk_min: 10, atk_max: 14, block_chance: 0.25, special: "crush", tier: 3,
+    lore: "Rabelais' giant king whose appetite shaped the very landscape of France." },
+  { name: "Mélusine", max_hp: 68, atk_min: 8, atk_max: 11, block_chance: 0.30, special: "regen", tier: 3,
+    lore: "Serpent-fairy of Lusignan, cursed to transform each Saturday — ancestress of royal bloodlines." },
+  { name: "Le Diable de Laval", max_hp: 85, atk_min: 11, atk_max: 16, block_chance: 0.20, special: "enrage", tier: 3,
+    lore: "The Devil himself appeared in Laval in 1453, setting fire to the town in a single night." },
+  { name: "La Vouivre", max_hp: 72, atk_min: 9, atk_max: 13, block_chance: 0.25, special: "venom", tier: 3,
+    lore: "Winged serpent of Franche-Comté, guarding treasure with a blazing ruby on its brow." },
+
+  // Tier 4 — Bosses
+  { name: "Grand Veneur", max_hp: 100, atk_min: 12, atk_max: 18, block_chance: 0.30, special: "summon_hounds", tier: 4,
+    lore: "Phantom huntsman of Fontainebleau forest, whose spectral pack was witnessed by Henri IV himself." },
+  { name: "Fée Morgane", max_hp: 90, atk_min: 9, atk_max: 13, block_chance: 0.35, special: "mirror", tier: 4,
+    lore: "Enchantress of Brocéliande, half-sister of King Arthur, mistress of illusions and fate." },
 ];
 
 const META_UPGRADES = [
-  { id: "max_hp", name: "Vitalité", desc: "+5 PV max par rang", max_rank: 6, base_cost: 15, cost_inc: 10 },
-  { id: "start_gold", name: "Héritage d'Or", desc: "+15 or de départ par rang", max_rank: 5, base_cost: 10, cost_inc: 8 },
-  { id: "start_str", name: "Force Ancestrale", desc: "+1 Force de départ par rang", max_rank: 3, base_cost: 30, cost_inc: 25 },
-  { id: "potion_slot", name: "Sacoche", desc: "+1 emplacement de potion", max_rank: 2, base_cost: 25, cost_inc: 30 },
-  { id: "start_potion", name: "Préparation", desc: "Commence avec une potion aléatoire", max_rank: 1, base_cost: 20, cost_inc: 0 },
-  { id: "card_draw", name: "Perspicacité", desc: "+1 carte piochée par tour", max_rank: 2, base_cost: 40, cost_inc: 35 },
-  { id: "start_armor", name: "Peau Dure", desc: "+1 armure passive par rang", max_rank: 3, base_cost: 20, cost_inc: 15 },
-  { id: "heal_on_win", name: "Second Souffle", desc: "+3 soin après chaque combat par rang", max_rank: 4, base_cost: 12, cost_inc: 10 },
+  { id: "max_hp", name: "Vitality", desc: "+5 max HP per rank", max_rank: 6, base_cost: 15, cost_inc: 10 },
+  { id: "start_gold", name: "Golden Heritage", desc: "+15 starting gold per rank", max_rank: 5, base_cost: 10, cost_inc: 8 },
+  { id: "start_str", name: "Ancestral Strength", desc: "+1 starting Strength per rank", max_rank: 3, base_cost: 30, cost_inc: 25 },
+  { id: "potion_slot", name: "Satchel", desc: "+1 potion slot", max_rank: 2, base_cost: 25, cost_inc: 30 },
+  { id: "start_potion", name: "Preparation", desc: "Start with a random potion", max_rank: 1, base_cost: 20, cost_inc: 0 },
+  { id: "card_draw", name: "Insight", desc: "+1 card drawn per turn", max_rank: 2, base_cost: 40, cost_inc: 35 },
+  { id: "start_armor", name: "Tough Skin", desc: "+1 passive armor per rank", max_rank: 3, base_cost: 20, cost_inc: 15 },
+  { id: "heal_on_win", name: "Second Breath", desc: "+3 heal after each combat per rank", max_rank: 4, base_cost: 12, cost_inc: 10 },
 ];

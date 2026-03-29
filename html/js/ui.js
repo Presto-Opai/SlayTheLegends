@@ -37,14 +37,14 @@ function restart() {
 function saveGame() {
   if (game.player.hp <= 0) return;
   game.saveRun();
-  game.log = "Partie sauvegardée !";
+  game.log = "Game saved!";
   redraw();
 }
 
 function loadGame() {
   const loaded = Game.loadRun(meta);
   if (loaded) { game = loaded; showingLegacy = false; redraw(); }
-  else { game.log = "Aucune sauvegarde trouvée."; redraw(); }
+  else { game.log = "No save found."; redraw(); }
 }
 
 function toggleLegacy() {
@@ -81,10 +81,18 @@ function redraw() {
       steal_energy: "Energy Thief", weaken_player: "Enfeebler", crush: "Crushing Blows",
       regen: "Regeneration", enrage: `Enrage (+${game.enemy.enrage_stacks || 0})`,
       summon_hounds: "Hound Master", mirror: "Mirror Shield",
+      auto_block: "Bear Hide (auto-block)", trickster: "Trickster",
+      venom: "Venomous",
     };
     const sp = el("div", "enemy-special");
     sp.textContent = `Ability: ${specials[game.enemy.special] || game.enemy.special}`;
     enemySec.appendChild(sp);
+  }
+
+  if (game.enemy.lore) {
+    const loreEl = el("div", "enemy-lore");
+    loreEl.textContent = game.enemy.lore;
+    enemySec.appendChild(loreEl);
   }
 
   // Intent
@@ -131,9 +139,9 @@ function redraw() {
   // Reward choices
   if (game.inReward && game.rewardChoices.length > 0) {
     const rewardSec = el("div", "reward-section");
-    const labels = { card: "Choisissez une carte", relic: "Choisissez une relique", potion: "Choisissez une potion" };
+    const labels = { card: "Choose a card", relic: "Choose a relic", potion: "Choose a potion" };
     const rTitle = el("div", "reward-title");
-    rTitle.textContent = `Récompense: ${labels[game.rewardType] || "Choose"}`;
+    rTitle.textContent = `Reward: ${labels[game.rewardType] || "Choose"}`;
     rewardSec.appendChild(rTitle);
 
     const rRow = el("div", "reward-row");
@@ -278,7 +286,7 @@ function makePotionChoice(potion, onClick) {
 function renderShop() {
   const sec = el("div", "shop-section");
   const title = el("div", "shop-title");
-  title.textContent = `BOUTIQUE — Or: ${game.gold}`;
+  title.textContent = `SHOP — Gold: ${game.gold}`;
   sec.appendChild(title);
 
   const grid = el("div", "shop-grid");
@@ -286,7 +294,7 @@ function renderShop() {
     const item = el("div", "shop-item");
     if (si.sold) {
       item.classList.add("sold");
-      item.innerHTML = "<div class='sold-text'>VENDU</div>";
+      item.innerHTML = "<div class='sold-text'>SOLD</div>";
       grid.appendChild(item);
       return;
     }
@@ -318,7 +326,7 @@ function renderShop() {
     }
 
     const priceEl = el("div", "shop-item-price");
-    priceEl.textContent = `${si.price} or`;
+    priceEl.textContent = `${si.price} gold`;
     item.appendChild(priceEl);
 
     item.addEventListener("click", () => {
@@ -338,7 +346,7 @@ function renderScry(main) {
   sec.appendChild(title);
 
   const cards = el("div", "scry-cards");
-  cards.textContent = game._scryCards.map(c => c.name).join(", ") || "(vide)";
+  cards.textContent = game._scryCards.map(c => c.name).join(", ") || "(empty)";
   sec.appendChild(cards);
 
   const btns = el("div", "scry-buttons");
@@ -368,7 +376,7 @@ function renderScry(main) {
 function renderRemoval(main) {
   const sec = el("div", "removal-section");
   const title = el("div", "removal-title");
-  title.textContent = "Choisissez une carte à retirer du deck:";
+  title.textContent = "Choose a card to remove from your deck:";
   sec.appendChild(title);
 
   const list = el("div", "removal-list");
@@ -386,7 +394,7 @@ function renderRemoval(main) {
   sec.appendChild(list);
 
   const cancelBtn = document.createElement("button");
-  cancelBtn.textContent = "Annuler";
+  cancelBtn.textContent = "Cancel";
   cancelBtn.className = "btn btn-cancel";
   cancelBtn.addEventListener("click", () => {
     game._showingRemoval = false;
@@ -407,20 +415,20 @@ function renderRemoval(main) {
 function renderDeath(main) {
   const sec = el("div", "death-section");
   const title = el("div", "death-title");
-  title.textContent = "DÉFAITE";
+  title.textContent = "DEFEAT";
   sec.appendChild(title);
 
   const info = el("div", "death-info");
-  info.textContent = `Niveau atteint: ${game.level}  —  Ennemis: ${game.kills}  —  Or: ${game.gold}`;
+  info.textContent = `Floor reached: ${game.level}  —  Enemies: ${game.kills}  —  Gold: ${game.gold}`;
   sec.appendChild(info);
 
   const pts = el("div", "death-points");
   const p = game.level * 3 + game.kills + (game.level >= 5 ? 10 : 0) + (game.level >= 10 ? 20 : 0) + (game.level >= 15 ? 30 : 0);
-  pts.textContent = `Points de legs gagnés: +${p}`;
+  pts.textContent = `Legacy points earned: +${p}`;
   sec.appendChild(pts);
 
   const hint = el("div", "death-hint");
-  hint.textContent = "R = recommencer    L = legs (améliorations)";
+  hint.textContent = "R = restart    L = legacy (upgrades)";
   sec.appendChild(hint);
 
   main.appendChild(sec);
@@ -430,11 +438,11 @@ function renderDeath(main) {
 function renderLegacy(main) {
   const sec = el("div", "legacy-section");
   const title = el("div", "legacy-title");
-  title.textContent = "LEGS — Améliorations Permanentes";
+  title.textContent = "LEGACY — Permanent Upgrades";
   sec.appendChild(title);
 
   const stats = el("div", "legacy-stats");
-  stats.textContent = `Points: ${meta.legacyPoints}  |  Runs: ${meta.totalRuns}  |  Meilleur: niveau ${meta.bestFloor}  |  Kills: ${meta.totalKills}`;
+  stats.textContent = `Points: ${meta.legacyPoints}  |  Runs: ${meta.totalRuns}  |  Best: floor ${meta.bestFloor}  |  Kills: ${meta.totalKills}`;
   sec.appendChild(stats);
 
   const grid = el("div", "legacy-grid");
@@ -465,7 +473,7 @@ function renderLegacy(main) {
 
     item.addEventListener("click", () => {
       if (meta.buy(u.id)) {
-        game.log = `Amélioration: ${u.name} rang ${meta.rank(u.id)} !`;
+        game.log = `Upgrade: ${u.name} rank ${meta.rank(u.id)}!`;
       }
       redraw();
     });
@@ -475,7 +483,7 @@ function renderLegacy(main) {
   sec.appendChild(grid);
 
   const hint = el("div", "legacy-hint");
-  hint.textContent = "Cliquez pour acheter — L pour fermer";
+  hint.textContent = "Click to buy — L to close";
   sec.appendChild(hint);
 
   main.appendChild(sec);
