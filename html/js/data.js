@@ -33,13 +33,13 @@ function makeCardDB() {
   add("Rally", 2, "Power", "+1 strength permanently.", "rally", "uncommon");
 
   // Neutral uncommon/rare
-  add("Adrenaline Rush", 0, "Skill", "Gain 2 energy. Draw 1. Exhaust.", "adrenalineRush", "rare");
+  add("Adrenaline Rush", 0, "Skill", "Gain 2 energy. Draw 1. Exhaust a card from hand. Exhaust.", "adrenalineRush", "rare");
   add("Whirlwind", 0, "Attack", "Deal 4 damage X times (X = energy). Spend all energy.", "whirlwind", "rare");
   add("Second Wind", 1, "Skill", "Gain 3 block for each card in hand.", "secondWind", "uncommon");
   add("Blood Pact", 0, "Attack", "Lose 3 HP. Deal 12 damage.", "bloodPact", "uncommon");
   add("Perfect Guard", 2, "Skill", "Gain 16 block.", "block16", "uncommon");
   add("Rampage", 1, "Attack", "Deal 8 damage. +4 per play this combat.", "rampage", "uncommon");
-  add("Offering", 0, "Skill", "Lose 6 HP. Gain 2 energy, draw 3. Exhaust.", "offering", "rare");
+  add("Offering", 0, "Skill", "Lose 6 HP. Gain 2 energy, draw 3. Exhaust a card from hand. Exhaust.", "offering", "rare");
   add("Shockwave", 2, "Skill", "Apply 3 Weak and 3 Vulnerable.", "shockwave", "rare");
   add("Body Slam", 1, "Attack", "Deal damage equal to your Block.", "bodySlam", "uncommon");
   add("Cleave", 1, "Attack", "Deal 9 damage.", "atk9");
@@ -134,6 +134,10 @@ const ENEMIES = [
     lore: "Mischievous Breton dwarf-spirits who dance around dolmens at night and punish the rude." },
   { name: "Maître Renard", max_hp: 38, atk_min: 5, atk_max: 9, block_chance: 0.20, special: "trickster", tier: 1,
     lore: "The cunning fox from the Roman de Renart, who outwits every beast in the kingdom." },
+  { name: "Cauchemar", max_hp: 40, atk_min: 6, atk_max: 9, block_chance: 0.15, special: "nightmare", tier: 1,
+    lore: "The nightmare mare of old French folklore — a demon horse that sits on your chest as you sleep." },
+  { name: "Bête du Mercantour", max_hp: 44, atk_min: 6, atk_max: 10, block_chance: 0.15, special: "pack_hunter", tier: 1,
+    lore: "A shadowy predator stalking the Alpine valleys, said to be no ordinary wolf." },
 
   // Tier 2 — Regional legends
   { name: "Tarasque", max_hp: 60, atk_min: 6, atk_max: 9, block_chance: 0.35, special: "thorns", tier: 2,
@@ -146,6 +150,8 @@ const ENEMIES = [
     lore: "Spectral lady haunting bridges and castles, demanding a dance — or cursing those who refuse." },
   { name: "Jean de l'Ours", max_hp: 62, atk_min: 7, atk_max: 10, block_chance: 0.30, special: "auto_block", tier: 2,
     lore: "Half-man, half-bear of the Pyrenees — born of a woman stolen by a bear, strong as iron." },
+  { name: "Le Basilic", max_hp: 50, atk_min: 7, atk_max: 11, block_chance: 0.20, special: "petrify", tier: 2,
+    lore: "King of serpents from medieval bestiaries — its gaze alone can turn flesh to stone." },
 
   // Tier 3 — Legendary terrors
   { name: "Gargantua", max_hp: 75, atk_min: 10, atk_max: 14, block_chance: 0.25, special: "crush", tier: 3,
@@ -156,12 +162,16 @@ const ENEMIES = [
     lore: "The Devil himself appeared in Laval in 1453, setting fire to the town in a single night." },
   { name: "La Vouivre", max_hp: 72, atk_min: 9, atk_max: 13, block_chance: 0.25, special: "venom", tier: 3,
     lore: "Winged serpent of Franche-Comté, guarding treasure with a blazing ruby on its brow." },
+  { name: "Gargouille", max_hp: 80, atk_min: 9, atk_max: 13, block_chance: 0.30, special: "stone_skin", tier: 3,
+    lore: "The dragon of Rouen — defeated by Saint Romanus, its stone likeness still adorns the cathedral." },
 
   // Tier 4 — Bosses
   { name: "Grand Veneur", max_hp: 100, atk_min: 12, atk_max: 18, block_chance: 0.30, special: "summon_hounds", tier: 4,
     lore: "Phantom huntsman of Fontainebleau forest, whose spectral pack was witnessed by Henri IV himself." },
   { name: "Fée Morgane", max_hp: 90, atk_min: 9, atk_max: 13, block_chance: 0.35, special: "mirror", tier: 4,
     lore: "Enchantress of Brocéliande, half-sister of King Arthur, mistress of illusions and fate." },
+  { name: "Roi des Aulnes", max_hp: 95, atk_min: 10, atk_max: 15, block_chance: 0.25, special: "soul_drain", tier: 4,
+    lore: "The Alder King — an ancient forest spirit who steals the life from those who linger in his domain." },
 ];
 
 const META_UPGRADES = [
