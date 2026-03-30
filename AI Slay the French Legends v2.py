@@ -663,9 +663,10 @@ class Game:
 
     def enemy_act(self):
         special = self.enemy.get("special")
-        # Auto-block: Jean de l'Ours gains block each turn passively
+        # Auto-block: Jean de l'Ours gains cycling block each turn
         if special == "auto_block":
-            ab = 5 + int(self.turn_number * 1.5)
+            cycle = [3, 4, 5, 6]
+            ab = cycle[(self.turn_number - 1) % len(cycle)]
             self.enemy["block"] += ab
             self.log = f"{self.enemy['name']} braces with bear-strength (+{ab} block). "
         if self.enemy_intent["type"] == "attack":
@@ -701,10 +702,8 @@ class Game:
 
         # Post-attack specials
         if special == "steal_energy" and random.random() < 0.3:
-            stolen = min(1, self.energy)
-            self.energy -= stolen
-            if stolen:
-                self.log += " Stole 1 energy!"
+            self.next_energy -= 1
+            self.log += " Drains your energy! (-1 energy next turn)"
 
         if special == "weaken_player" and random.random() < 0.4:
             self.player["weak"] += 1
@@ -739,10 +738,11 @@ class Game:
                 self.enemy["block"] += 6
                 self.log += " Renard dodges behind cover (+6 block)!"
             else:
-                if self.hand:
-                    thrown = self.hand.pop()
-                    self.discard.append(thrown)
-                    self.log += " Renard steals a card from your hand!"
+                if self.draw_pile:
+                    idx = random.randint(0, len(self.draw_pile) - 1)
+                    stolen = self.draw_pile.pop(idx)
+                    self.exhaust.append(stolen)
+                    self.log += f" Renard snatches {stolen['name']} from your deck!"
 
         if special == "venom":
             vdmg = 3 + self.turn_number
