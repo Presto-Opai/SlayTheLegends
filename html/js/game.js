@@ -273,6 +273,7 @@ class Game {
       case "storkBlessing": this.heal(4); this.gainBlock(4); return "Stork brings good fortune: heal 4, +4 block.";
       case "hansTrapFury": this.dealDamage(8, "You"); this.applyWeak(2); return "Hans Trapp rages: 8 dmg + 2 Weak!";
       case "rhineGold": this.changeEnergy(1); this.gainBlock(3); return "Golden light: +1 energy, +3 block.";
+      case "gallicResolve": this.player.armor += 1; this.applyWeak(1); return "Gallic Resolve: +1 armor, 1 Weak!";
       default: return card.text;
     }
   }
@@ -591,22 +592,27 @@ class Game {
     const goldGain = this.randInt(10, 25) + this.level * 2;
     this.gold += goldGain;
 
-    const roll = Math.random();
-    if (roll < 0.15 && this.potions.length < this.maxPotions) {
-      this.rewardType = "potion";
-      this.rewardChoices = this._sample(POTIONS, 3).map(p => ({ ...p }));
-      this.log = `Victory! +${goldGain} gold. Choose a potion.`;
-    } else if (roll < 0.25 && this.level % 3 === 0) {
-      this.rewardType = "relic";
-      const available = RELICS.filter(r => !this.hasRelic(r.name));
-      if (available.length > 0) {
-        this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
-        this.log = `Victory! +${goldGain} gold. Choose a relic!`;
+    // On scaling floors, always offer card rewards (so the scaling card appears)
+    if (this._isScalingFloor()) {
+      this._cardReward(goldGain);
+    } else {
+      const roll = Math.random();
+      if (roll < 0.15 && this.potions.length < this.maxPotions) {
+        this.rewardType = "potion";
+        this.rewardChoices = this._sample(POTIONS, 3).map(p => ({ ...p }));
+        this.log = `Victory! +${goldGain} gold. Choose a potion.`;
+      } else if (roll < 0.25 && this.level % 3 === 0) {
+        this.rewardType = "relic";
+        const available = RELICS.filter(r => !this.hasRelic(r.name));
+        if (available.length > 0) {
+          this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
+          this.log = `Victory! +${goldGain} gold. Choose a relic!`;
+        } else {
+          this._cardReward(goldGain);
+        }
       } else {
         this._cardReward(goldGain);
       }
-    } else {
-      this._cardReward(goldGain);
     }
   }
 
@@ -620,17 +626,49 @@ class Game {
     return result;
   }
 
+  _isScalingFloor() {
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve"];
+    const floor = this.level;
+    // Base: floors 5, 8, 11, 14... (every 3 starting at 5)
+    let isScaling = floor >= 5 && (floor - 5) % 3 === 0;
+    // Legacy: Warrior's Path rank 1 = also floor 2, rank 2 = also floor 1
+    const wpRank = this.meta.rank("scaling_floor");
+    if (wpRank >= 1 && floor === 2) isScaling = true;
+    if (wpRank >= 2 && floor === 1) isScaling = true;
+    return isScaling ? SCALING_CARDS : null;
+  }
+
   _cardReward(goldGain) {
     this.rewardType = "card";
     const regionKeys = Object.keys(REGIONS);
     const region = regionKeys[Math.floor(Math.random() * regionKeys.length)];
     let pool = [...REGIONS[region]];
     pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
-      "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind");
+      "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
+      "Gallic Resolve");
     if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave");
     if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering");
+
+    // Remove scaling cards from main pool so we control their placement
+    const scalingPool = this._isScalingFloor();
+    if (scalingPool) {
+      pool = pool.filter(n => !scalingPool.includes(n));
+    }
+
     const unique = [...new Set(pool)];
-    const choices = this._sample(unique, 3);
+    const choices = this._sample(unique, scalingPool ? 2 : 3);
+
+    // Inject exactly 1 scaling card on scaling floors
+    if (scalingPool) {
+      const pick = scalingPool[Math.floor(Math.random() * scalingPool.length)];
+      choices.push(pick);
+      // Shuffle so it's not always last
+      for (let i = choices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [choices[i], choices[j]] = [choices[j], choices[i]];
+      }
+    }
+
     this.rewardChoices = choices.filter(n => CARD_DB[n]).map(n => ({ ...CARD_DB[n] }));
     this.log = `Victory! +${goldGain} gold. Choose a card (${region}).`;
   }

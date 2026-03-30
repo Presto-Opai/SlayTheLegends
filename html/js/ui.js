@@ -209,7 +209,7 @@ function updateSidebar() {
 
   // Meta stats
   document.getElementById("meta-stats").textContent =
-    `Legs: ${meta.legacyPoints}  Runs: ${meta.totalRuns}  Best: ${meta.bestFloor}`;
+    `Legacy: ${meta.legacyPoints}  Runs: ${meta.totalRuns}  Best: ${meta.bestFloor}`;
 }
 
 // ===================== COMPONENTS =====================
