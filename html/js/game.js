@@ -376,9 +376,10 @@ class Game {
 
   enemyAct() {
     const special = this.enemy.special;
-    // Auto-block: Jean de l'Ours gains block each turn passively
+    // Auto-block: Jean de l'Ours gains cycling block each turn
     if (special === "auto_block") {
-      const ab = 5 + Math.floor(this.turnNumber * 1.5);
+      const cycle = [3, 4, 5, 6];
+      const ab = cycle[(this.turnNumber - 1) % cycle.length];
       this.enemy.block += ab;
       this.log = `${this.enemy.name} braces with bear-strength (+${ab} block). `;
     }
@@ -412,9 +413,8 @@ class Game {
     }
 
     if (special === "steal_energy" && Math.random() < 0.3) {
-      const stolen = Math.min(1, this.energy);
-      this.energy -= stolen;
-      if (stolen) this.log += " Stole 1 energy!";
+      this.nextEnergy -= 1;
+      this.log += " Drains your energy! (-1 energy next turn)";
     }
     if (special === "weaken_player" && Math.random() < 0.4) {
       this.player.weak += 1;
@@ -447,9 +447,10 @@ class Game {
         this.enemy.block += 6;
         this.log += " Renard dodges behind cover (+6 block)!";
       } else {
-        if (this.hand.length > 0) {
-          this.discard.push(this.hand.pop());
-          this.log += " Renard steals a card from your hand!";
+        if (this.drawPile.length > 0) {
+          const stolen = this.drawPile.splice(Math.floor(Math.random() * this.drawPile.length), 1)[0];
+          this.exhaust.push(stolen);
+          this.log += ` Renard snatches ${stolen.name} from your deck!`;
         }
       }
     }
