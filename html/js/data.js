@@ -43,6 +43,7 @@ function makeCardDB() {
   add("Shockwave", 2, "Skill", "Apply 3 Weak and 3 Vulnerable.", "shockwave", "rare");
   add("Body Slam", 1, "Attack", "Deal damage equal to your Block.", "bodySlam", "uncommon");
   add("Cleave", 1, "Attack", "Deal 9 damage.", "atk9");
+  add("Gallic Resolve", 1, "Power", "+1 armor. Apply 1 Weak.", "gallicResolve", "uncommon");
 
   // Bretagne
   add("Ankou's Scythe", 2, "Attack", "Deal 10. Apply 1 Vulnerable.", "ankouScythe", "uncommon");
@@ -172,4 +173,5 @@ const META_UPGRADES = [
   { id: "card_draw", name: "Insight", desc: "+1 card drawn per turn", max_rank: 2, base_cost: 40, cost_inc: 35 },
   { id: "start_armor", name: "Tough Skin", desc: "+1 passive armor per rank", max_rank: 3, base_cost: 20, cost_inc: 15 },
   { id: "heal_on_win", name: "Second Breath", desc: "+3 heal after each combat per rank", max_rank: 4, base_cost: 12, cost_inc: 10 },
+  { id: "scaling_floor", name: "Warrior's Path", desc: "Rank 1: scaling card guaranteed at floor 2. Rank 2: also at floor 1.", max_rank: 2, base_cost: 25, cost_inc: 30 },
 ];
