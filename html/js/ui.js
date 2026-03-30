@@ -70,7 +70,8 @@ function redraw() {
 
   // Enemy section
   const enemySec = el("div", "enemy-section");
-  enemySec.appendChild(makeBar(game.enemy.name + " HP", game.enemy.hp, game.enemy.max_hp, "enemy-bar"));
+  const enemyLabel = (game.enemy.elite ? "ELITE " : "") + game.enemy.name + " HP";
+  enemySec.appendChild(makeBar(enemyLabel, game.enemy.hp, game.enemy.max_hp, "enemy-bar"));
   const enemyStats = el("div", "enemy-stats");
   enemyStats.textContent = `Block: ${game.enemy.block}  Vuln: ${game.enemy.vuln}  Weak: ${game.enemy.weak}`;
   enemySec.appendChild(enemyStats);
@@ -83,6 +84,9 @@ function redraw() {
       summon_hounds: "Hound Master", mirror: "Mirror Shield",
       auto_block: "Bear Hide (auto-block)", trickster: "Trickster",
       venom: "Venomous",
+      nightmare: "Nightmare (draw penalty)", pack_hunter: "Pack Hunter (+3 if unblocked)",
+      petrify: "Petrifying Gaze", stone_skin: "Stone Skin (resists weak hits)",
+      soul_drain: "Soul Drain (-2 max HP/turn)",
     };
     const sp = el("div", "enemy-special");
     sp.textContent = `Ability: ${specials[game.enemy.special] || game.enemy.special}`;
@@ -124,6 +128,7 @@ function redraw() {
   const pStats = el("div", "player-stats");
   pStats.textContent = `Block: ${game.player.block}  STR: ${game.player.strength}  Armor: ${game.player.armor}`;
   if (game.player.weak > 0) pStats.textContent += `  Weak: ${game.player.weak}`;
+  if (game.player.vuln > 0) pStats.textContent += `  Vuln: ${game.player.vuln}`;
   playerSec.appendChild(pStats);
 
   // Energy

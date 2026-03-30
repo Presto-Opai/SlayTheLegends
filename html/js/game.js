@@ -80,7 +80,7 @@ class Game {
       max_hp: baseHp, hp: baseHp, block: 0,
       armor: this.meta.rank("start_armor"),
       strength: this.meta.rank("start_str"),
-      weak: 0, song_block: 0
+      weak: 0, vuln: 0, song_block: 0
     };
     this.energy = 3;
     this.nextEnergy = 0;
@@ -103,6 +103,7 @@ class Game {
     this.maxPotions = 3 + this.meta.rank("potion_slot");
     this.healOnWinBonus = this.meta.rank("heal_on_win") * 3;
     this.damageTakenThisCombat = 0;
+    this.drawPenalty = 0;
     this.attacksPlayed = 0;
     this.turnNumber = 0;
     this.rampageBonus = {};
@@ -154,6 +155,10 @@ class Game {
     }
     if (this.enemy.vuln > 0 && source === "You") amount = Math.floor(amount * 1.5);
     amount = Math.max(0, amount);
+    // Stone Skin: attacks dealing 5 or less (before block) are reduced to 1
+    if (source === "You" && this.enemy.special === "stone_skin" && amount > 0 && amount <= 5) {
+      amount = 1;
+    }
     if (this.enemy.block > 0) {
       const absorb = Math.min(this.enemy.block, amount);
       this.enemy.block -= absorb;
@@ -217,15 +222,18 @@ class Game {
   usePotion(idx) {
     if (idx < 0 || idx >= this.potions.length || this.inReward) return;
     const p = this.potions.splice(idx, 1)[0];
+    // Scale numeric potion values with floor (10% per floor)
+    const potionScale = 1.0 + 0.1 * this.level;
+    const sv = (v) => Math.floor(v * potionScale);
     switch (p.action) {
-      case "damage": this.dealDamage(p.value, "You"); this.log = `Used ${p.name}: ${p.value} damage!`; break;
-      case "block": this.gainBlock(p.value); this.log = `Used ${p.name}: +${p.value} block!`; break;
-      case "strength": this.player.strength += p.value; this.log = `Used ${p.name}: +${p.value} STR!`; break;
-      case "draw": this.draw(p.value); this.log = `Used ${p.name}: drew ${p.value}!`; break;
-      case "vuln": this.applyVuln(p.value); this.log = `Used ${p.name}: ${p.value} Vulnerable!`; break;
-      case "weak": this.applyWeak(p.value); this.log = `Used ${p.name}: ${p.value} Weak!`; break;
-      case "heal": this.heal(p.value); this.log = `Used ${p.name}: healed ${p.value}!`; break;
-      case "energy": this.changeEnergy(p.value); this.log = `Used ${p.name}: +${p.value} energy!`; break;
+      case "damage": { const v = sv(p.value); this.dealDamage(v, "You"); this.log = `Used ${p.name}: ${v} damage!`; break; }
+      case "block": { const v = sv(p.value); this.gainBlock(v); this.log = `Used ${p.name}: +${v} block!`; break; }
+      case "strength": { const v = Math.max(p.value, sv(p.value)); this.player.strength += v; this.log = `Used ${p.name}: +${v} STR!`; break; }
+      case "draw": { this.draw(p.value); this.log = `Used ${p.name}: drew ${p.value}!`; break; }
+      case "vuln": { const v = Math.max(p.value, sv(p.value)); this.applyVuln(v); this.log = `Used ${p.name}: ${v} Vulnerable!`; break; }
+      case "weak": { const v = Math.max(p.value, sv(p.value)); this.applyWeak(v); this.log = `Used ${p.name}: ${v} Weak!`; break; }
+      case "heal": { const v = sv(p.value); this.heal(v); this.log = `Used ${p.name}: healed ${v}!`; break; }
+      case "energy": { this.changeEnergy(p.value); this.log = `Used ${p.name}: +${p.value} energy!`; break; }
     }
     if (this.enemy && this.enemy.hp <= 0) { this.winBattle(); return; }
   }
@@ -243,10 +251,18 @@ class Game {
       case "weak2": this.applyWeak(2); return "Enemy is Weakened for 2 turns.";
       case "fortify": this.player.armor += 1; return "+1 armor (persists).";
       case "rally": this.player.strength += 1; return "+1 strength (persists).";
-      case "adrenalineRush": this.changeEnergy(2); this.draw(1); return "+2 energy, drew 1. Exhausted.";
+      case "adrenalineRush": {
+        this.changeEnergy(2); this.draw(1);
+        if (this.hand.length > 0) { const i = Math.floor(Math.random() * this.hand.length); const c = this.hand.splice(i, 1)[0]; this.exhaust.push(c); }
+        return "+2 energy, drew 1. Exhausted a card.";
+      }
       case "bloodPact": this.selfDamage(3); this.dealDamage(12, "You"); return "Blood for power: 12 dmg!";
       case "block16": this.gainBlock(16); return "Gain 16 block.";
-      case "offering": this.selfDamage(6); this.changeEnergy(2); this.draw(3); return "Sacrifice: +2 energy, drew 3. Exhausted.";
+      case "offering": {
+        this.selfDamage(6); this.changeEnergy(2); this.draw(3);
+        if (this.hand.length > 0) { const i = Math.floor(Math.random() * this.hand.length); const c = this.hand.splice(i, 1)[0]; this.exhaust.push(c); }
+        return "Sacrifice: +2 energy, drew 3. Exhausted a card.";
+      }
       case "shockwave": this.applyWeak(3); this.applyVuln(3); return "Shockwave: 3 Weak + 3 Vuln!";
       case "atk9": return `Deal ${this.dealDamage(9, "You")}.`;
       case "atk14": return `Deal ${this.dealDamage(14, "You")}.`;
@@ -308,13 +324,24 @@ class Game {
     template.atk_min = Math.floor(template.atk_min * scale);
     template.atk_max = Math.floor(template.atk_max * scale);
 
+    // Elite encounter at floors 4, 7, 10, 13... (every 3 starting at 4)
+    const isElite = this.level >= 4 && (this.level - 4) % 3 === 0;
+    if (isElite) {
+      template.max_hp = Math.floor(template.max_hp * 1.5);
+      template.atk_min = Math.floor(template.atk_min * 1.3);
+      template.atk_max = Math.floor(template.atk_max * 1.3);
+    }
+
     this.enemy = {
       ...template,
       hp: template.max_hp, block: 0, vuln: 0, weak: 0, enrage_stacks: 0,
-      lore: template.lore || null
+      lore: template.lore || null, elite: isElite
     };
     this.damageTakenThisCombat = 0;
+    this.drawPenalty = 0;
     this.player.song_block = 0;
+    this.player.vuln = 0;
+    this.player.weak = 0;
     this.turnNumber = 0;
     this.revealedIntents = [];
     this.rampageBonus = {};
@@ -325,17 +352,21 @@ class Game {
     this.inReward = false;
     this.startPlayerTurn();
     this.pickEnemyIntent();
-    this.log = `A ${this.enemy.name} appears!`;
+    this.log = isElite ? `An ELITE ${this.enemy.name} appears!` : `A ${this.enemy.name} appears!`;
   }
 
   startPlayerTurn() {
     this.turnNumber++;
     this.energy = 3 + this.nextEnergy;
     this.nextEnergy = 0;
-    this.player.block = 0;
+    // Retain 25% of block between turns (Endurance)
+    this.player.block = Math.floor(this.player.block * 0.25);
     if (this.player.song_block > 0) this.player.block += this.player.song_block;
     if (this.hasRelic("Horn Cleat") && this.turnNumber === 2) this.energy += 1;
-    this.draw(this.handsize);
+    // Nightmare draw penalty
+    const drawAmount = Math.max(1, this.handsize - (this.drawPenalty || 0));
+    this.drawPenalty = 0;
+    this.draw(drawAmount);
   }
 
   endPlayerTurn() {
@@ -357,6 +388,7 @@ class Game {
     if (this.enemy.vuln > 0) this.enemy.vuln--;
     if (this.enemy.weak > 0) this.enemy.weak--;
     if (this.player.weak > 0) this.player.weak--;
+    if (this.player.vuln > 0) this.player.vuln--;
   }
 
   pickEnemyIntent() {
@@ -391,6 +423,8 @@ class Game {
         let dmg = this.enemyIntent.value;
         if (this.enemy.weak > 0) dmg = Math.floor(dmg * 0.75);
         dmg += (this.enemy.enrage_stacks || 0);
+        if (special === "pack_hunter" && this.player.block === 0) dmg += 3;
+        if (this.player.vuln > 0) dmg = Math.floor(dmg * 1.5);
         if (this.hasRelic("Torii") && dmg <= 5 && dmg > 0) dmg = 1;
         if (this.player.block > 0) {
           const ab = Math.min(this.player.block, dmg);
@@ -460,6 +494,24 @@ class Game {
       this.player.hp -= vdmg;
       this.clamp();
       this.log += ` Vouivre's venom burns for ${vdmg}!`;
+    }
+    if (special === "nightmare" && Math.random() < 0.30) {
+      this.drawPenalty = (this.drawPenalty || 0) + 1;
+      this.log += " Nightmare! Draw 1 fewer card next turn.";
+    }
+    if (special === "pack_hunter") {
+      // Bonus damage already dealt above if player had 0 block at start of attack
+      // Handled in the attack loop via packHunterBonus flag
+    }
+    if (special === "petrify" && Math.random() < 0.25) {
+      this.player.weak += 1;
+      this.player.vuln = (this.player.vuln || 0) + 1;
+      this.log += " Petrifying gaze! +1 Weak, +1 Vulnerable!";
+    }
+    if (special === "soul_drain") {
+      this.player.max_hp = Math.max(10, this.player.max_hp - 2);
+      if (this.player.hp > this.player.max_hp) this.player.hp = this.player.max_hp;
+      this.log += " Soul drained! Max HP -2.";
     }
   }
 
@@ -589,8 +641,20 @@ class Game {
 
     this.saveRun();
 
-    const goldGain = this.randInt(10, 25) + this.level * 2;
+    const eliteBonus = this.enemy.elite ? 25 : 0;
+    const goldGain = this.randInt(10, 25) + this.level * 2 + eliteBonus;
     this.gold += goldGain;
+
+    // Elite victory: guaranteed relic reward
+    if (this.enemy.elite) {
+      const available = RELICS.filter(r => !this.hasRelic(r.name));
+      if (available.length > 0) {
+        this.rewardType = "relic";
+        this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
+        this.log = `Elite vanquished! +${goldGain} gold. Choose a relic!`;
+        return;
+      }
+    }
 
     // On scaling floors, always offer card rewards (so the scaling card appears)
     if (this._isScalingFloor()) {
@@ -707,10 +771,10 @@ class Game {
   }
 
   _reshuffleAndNext() {
-    this.discard.push(...this.hand);
     this.hand = [];
-    this.drawPile = [...this.deck.map(c => ({ ...c })), ...this.discard];
     this.discard = [];
+    this.exhaust = [];
+    this.drawPile = this.deck.map(c => ({ ...c }));
     this.shuffle(this.drawPile);
     this.nextEnemy();
   }
@@ -722,8 +786,13 @@ class Game {
     this.rewardChoices = [];
     this.shopItems = [];
 
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve"];
     const allCards = Object.keys(CARD_DB);
-    const shopCardNames = this._sample(allCards, 5);
+    const shopCardNames = this._sample(allCards.filter(n => !SCALING_CARDS.includes(n)), 4);
+    // Guarantee 1 scaling card in every shop
+    const scalingPick = SCALING_CARDS[Math.floor(Math.random() * SCALING_CARDS.length)];
+    shopCardNames.push(scalingPick);
+    this.shuffle(shopCardNames);
     for (const name of shopCardNames) {
       const card = CARD_DB[name];
       const rarity = card.rarity || "common";
@@ -743,7 +812,7 @@ class Game {
 
     this.shopItems.push({
       item: { name: "Remove a card", desc: "Remove a card from your deck." },
-      price: 50 + this.level * 5, type: "remove", sold: false
+      price: Math.min(100, 50 + this.level * 5), type: "remove", sold: false
     });
 
     this.log = `Welcome to the shop! Gold: ${this.gold}`;
