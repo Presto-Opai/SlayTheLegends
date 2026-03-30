@@ -707,10 +707,10 @@ class Game {
   }
 
   _reshuffleAndNext() {
-    this.discard.push(...this.hand);
     this.hand = [];
-    this.drawPile = [...this.deck.map(c => ({ ...c })), ...this.discard];
     this.discard = [];
+    this.exhaust = [];
+    this.drawPile = this.deck.map(c => ({ ...c }));
     this.shuffle(this.drawPile);
     this.nextEnemy();
   }
