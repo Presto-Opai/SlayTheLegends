@@ -4,11 +4,11 @@
 const REGIONS = {
   "Bretagne": ["Ankou's Scythe", "Korrigan Trick", "Washerwomen's Omen", "Botte de Nevers"],
   "Provence": ["Tarasque Roar", "Drac of Camargue", "Santons' Blessing", "Jeanne's Pyre"],
-  "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide"],
+  "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide", "Rempart de Vauban"],
   "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes"],
   "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Rage du Diable"],
   "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse", "Sight of the Mazzeri"],
-  "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Armure aux Lions"],
+  "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Armure aux Lions", "Ruse de Renart"],
   "Occitanie": ["Lou Pastre Ballad", "Fées de l'Orb", "Cathar Resolve", "Enchaînement"],
   "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Fureur de Woinic"],
   "Alsace": ["Stork's Blessing", "Hans Trapp's Fury", "Rhine Gold"],
@@ -98,6 +98,8 @@ function makeCardDB() {
   // Combo cards — stronger when trigger condition is met
   add("Botte de Nevers", 1, "Attack", "Deal 5 damage. Deal an extra 4 damage hit for each Skill played this turn.", "botteDeNevers", "uncommon");
   add("Enchaînement", 0, "Attack", "Deal 3 damage. If you played 2+ Attacks this turn, deal 9 and draw 1.", "enchainement", "uncommon");
+  add("Rempart de Vauban", 1, "Skill", "Gain 4 block. Gain 3 extra block for each Attack played this turn.", "rempartVauban", "uncommon");
+  add("Ruse de Renart", 0, "Attack", "Deal 2 damage. If enemy intends to block, apply 1 Vulnerable then deal 8.", "ruseRenart", "uncommon");
 
   // New Power cards — more scaling options for midgame
   add("Rage du Diable", 2, "Power", "+2 strength at the start of each turn. Exhaust.", "demonForm", "rare");

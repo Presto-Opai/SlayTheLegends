@@ -634,6 +634,27 @@ class Game {
       if (this.enemy.hp <= 0) { this.winBattle(); return; }
       return;
     }
+    if (played.effectKey === "rempartVauban") {
+      const extras = this.attacksThisTurn;
+      const total = 4 + extras * 3;
+      this.gainBlock(total);
+      this.discardOrExhaust(played);
+      this.log = extras > 0 ? `Rempart de Vauban: +${total} block! (${extras} Attacks)` : `Rempart de Vauban: +4 block.`;
+      return;
+    }
+    if (played.effectKey === "ruseRenart") {
+      if (this.enemyIntent.type === "block") {
+        this.applyVuln(1);
+        this.dealDamage(8, "You");
+        this.log = "Ruse de Renart: 1 Vulnerable, then 8 damage! (combo)";
+      } else {
+        this.dealDamage(2, "You");
+        this.log = "Ruse de Renart: 2 damage.";
+      }
+      this.discardOrExhaust(played);
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
     if (played.effectKey === "enchainement") {
       const triggered = this.attacksThisTurn >= 3; // this card is the 3rd+ attack
       if (triggered) { this.dealDamage(9, "You"); this.draw(1); this.log = "Enchaînement: 9 damage, drew 1! (combo)"; }
@@ -752,7 +773,7 @@ class Game {
     pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
       "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
       "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre", "Sight of the Mazzeri",
-      "Botte de Nevers", "Enchaînement");
+      "Botte de Nevers", "Enchaînement", "Rempart de Vauban", "Ruse de Renart");
     if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
     if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
 
