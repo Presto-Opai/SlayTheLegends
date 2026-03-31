@@ -3,14 +3,14 @@
 
 const REGIONS = {
   "Bretagne": ["Ankou's Scythe", "Korrigan Trick", "Washerwomen's Omen"],
-  "Provence": ["Tarasque Roar", "Drac of Camargue", "Santons' Blessing", "Flame Barrier"],
+  "Provence": ["Tarasque Roar", "Drac of Camargue", "Santons' Blessing", "Jeanne's Pyre"],
   "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide"],
   "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes"],
-  "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Demon Form"],
-  "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse", "Battle Trance"],
-  "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Metallicize"],
+  "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Rage du Diable"],
+  "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse", "Sight of the Mazzeri"],
+  "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Armure aux Lions"],
   "Occitanie": ["Lou Pastre Ballad", "Fées de l'Orb", "Cathar Resolve"],
-  "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Juggernaut"],
+  "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Fureur de Woinic"],
   "Alsace": ["Stork's Blessing", "Hans Trapp's Fury", "Rhine Gold"],
 };
 
@@ -96,11 +96,11 @@ function makeCardDB() {
   add("Rhine Gold", 0, "Skill", "Gain 1 energy. Gain 3 block.", "rhineGold", "uncommon");
 
   // New Power cards — more scaling options for midgame
-  add("Demon Form", 2, "Power", "+2 strength at the start of each turn. Exhaust.", "demonForm", "rare");
-  add("Metallicize", 1, "Power", "Gain 3 block at the start of each turn. Exhaust.", "metallicize", "uncommon");
-  add("Juggernaut", 2, "Power", "Deal 3 damage to enemy whenever you gain block. Exhaust.", "juggernaut", "uncommon");
-  add("Flame Barrier", 1, "Power", "When hit, deal 4 damage back. Exhaust.", "flameBarrier", "uncommon");
-  add("Battle Trance", 1, "Power", "+1 card drawn per turn. Exhaust.", "battleTrance", "uncommon");
+  add("Rage du Diable", 2, "Power", "+2 strength at the start of each turn. Exhaust.", "demonForm", "rare");
+  add("Armure aux Lions", 1, "Power", "Gain 3 block at the start of each turn. Exhaust.", "metallicize", "uncommon");
+  add("Fureur de Woinic", 2, "Power", "Deal 3 damage to enemy whenever you gain block. Exhaust.", "juggernaut", "uncommon");
+  add("Jeanne's Pyre", 1, "Power", "When hit, deal 4 damage back. Exhaust.", "flameBarrier", "uncommon");
+  add("Sight of the Mazzeri", 1, "Power", "+1 card drawn per turn. Exhaust.", "battleTrance", "uncommon");
 
   return db;
 }

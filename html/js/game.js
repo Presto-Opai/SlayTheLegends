@@ -710,7 +710,7 @@ class Game {
   }
 
   _isScalingFloor() {
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Demon Form", "Metallicize", "Battle Trance"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions", "Sight of the Mazzeri"];
     const floor = this.level;
     // Base: floors 5, 8, 11, 14... (every 3 starting at 5)
     let isScaling = floor >= 5 && (floor - 5) % 3 === 0;
@@ -728,9 +728,9 @@ class Game {
     let pool = [...REGIONS[region]];
     pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
       "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
-      "Gallic Resolve", "Metallicize", "Flame Barrier", "Battle Trance");
-    if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Juggernaut");
-    if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Demon Form");
+      "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre", "Sight of the Mazzeri");
+    if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
+    if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
 
     // Remove scaling cards from main pool so we control their placement
     const scalingPool = this._isScalingFloor();
@@ -805,7 +805,7 @@ class Game {
     this.rewardChoices = [];
     this.shopItems = [];
 
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Demon Form", "Metallicize", "Battle Trance"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions", "Sight of the Mazzeri"];
     const allCards = Object.keys(CARD_DB);
     const shopCardNames = this._sample(allCards.filter(n => !SCALING_CARDS.includes(n)), 4);
     // Guarantee 1 scaling card in every shop
