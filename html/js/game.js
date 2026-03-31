@@ -91,7 +91,8 @@ class Game {
     this.log = "Welcome, hero!";
     this.enemy = null;
     this.enemyIntent = { type: "attack", value: 6 };
-    this.handsize = 5 + this.meta.rank("card_draw");
+    this.baseHandsize = 5 + this.meta.rank("card_draw");
+    this.handsize = this.baseHandsize;
     this.inReward = false;
     this.rewardChoices = [];
     this.rewardType = "card";
@@ -175,6 +176,9 @@ class Game {
   gainBlock(n) {
     n += this.player.armor;
     this.player.block += n;
+    if (this.player.juggernaut > 0 && this.enemy) {
+      this.enemy.hp -= this.player.juggernaut;
+    }
   }
 
   heal(n) { this.player.hp += n; this.clamp(); }
@@ -249,8 +253,8 @@ class Game {
       case "vuln1": this.applyVuln(1); return "Enemy is Vulnerable for 1 turn.";
       case "weak1": this.applyWeak(1); return "Enemy is Weakened for 1 turn.";
       case "weak2": this.applyWeak(2); return "Enemy is Weakened for 2 turns.";
-      case "fortify": this.player.armor += 1; return "+1 armor (persists).";
-      case "rally": this.player.strength += 1; return "+1 strength (persists).";
+      case "fortify": this.player.armor += 2; return "+2 armor (persists).";
+      case "rally": this.player.strength += 2; return "+2 strength (persists).";
       case "adrenalineRush": {
         this.changeEnergy(2); this.draw(1);
         if (this.hand.length > 0) { const i = Math.floor(Math.random() * this.hand.length); const c = this.hand.splice(i, 1)[0]; this.exhaust.push(c); }
@@ -290,6 +294,11 @@ class Game {
       case "hansTrapFury": this.dealDamage(8, "You"); this.applyWeak(2); return "Hans Trapp rages: 8 dmg + 2 Weak!";
       case "rhineGold": this.changeEnergy(1); this.gainBlock(3); return "Golden light: +1 energy, +3 block.";
       case "gallicResolve": this.player.armor += 1; this.applyWeak(1); return "Gallic Resolve: +1 armor, 1 Weak!";
+      case "demonForm": this.player.demonForm = (this.player.demonForm || 0) + 2; return "Demon Form: +2 STR each turn!";
+      case "metallicize": this.player.metallicize = (this.player.metallicize || 0) + 3; return "Metallicize: +3 block each turn!";
+      case "juggernaut": this.player.juggernaut = (this.player.juggernaut || 0) + 3; return "Juggernaut: 3 dmg on block gain!";
+      case "flameBarrier": this.player.flameBarrier = (this.player.flameBarrier || 0) + 4; return "Flame Barrier: 4 dmg on hit!";
+      case "battleTrance": this.handsize += 1; return "Battle Trance: +1 card per turn!";
       default: return card.text;
     }
   }
@@ -314,11 +323,11 @@ class Game {
 
     const lvl = this.level;
     let scale;
-    if (lvl <= 20) {
-      scale = 1.0 + 0.18 * lvl;
+    if (lvl <= 40) {
+      scale = 1.0 + 0.1 * lvl;
     } else {
-      const over = lvl - 20;
-      scale = 4.6 + 0.35 * over + 0.02 * over * over;
+      const over = lvl - 40;
+      scale = 5.0 + 0.2 * over + 0.015 * over * over;
     }
     template.max_hp = Math.floor(template.max_hp * scale);
     template.atk_min = Math.floor(template.atk_min * scale);
@@ -340,8 +349,13 @@ class Game {
     this.damageTakenThisCombat = 0;
     this.drawPenalty = 0;
     this.player.song_block = 0;
+    this.player.demonForm = 0;
+    this.player.metallicize = 0;
+    this.player.juggernaut = 0;
+    this.player.flameBarrier = 0;
     this.player.vuln = 0;
     this.player.weak = 0;
+    this.handsize = this.baseHandsize;
     this.turnNumber = 0;
     this.revealedIntents = [];
     this.rampageBonus = {};
@@ -362,6 +376,8 @@ class Game {
     // Retain 25% of block between turns (Endurance)
     this.player.block = Math.floor(this.player.block * 0.25);
     if (this.player.song_block > 0) this.player.block += this.player.song_block;
+    if (this.player.demonForm > 0) this.player.strength += this.player.demonForm;
+    if (this.player.metallicize > 0) this.gainBlock(this.player.metallicize);
     if (this.hasRelic("Horn Cleat") && this.turnNumber === 2) this.energy += 1;
     // Nightmare draw penalty
     const drawAmount = Math.max(1, this.handsize - (this.drawPenalty || 0));
@@ -437,6 +453,9 @@ class Game {
         total += actual;
         if (special === "life_drain") {
           this.enemy.hp = Math.min(this.enemy.max_hp, this.enemy.hp + Math.floor(actual / 2));
+        }
+        if (actual > 0 && this.player.flameBarrier > 0) {
+          this.enemy.hp -= this.player.flameBarrier;
         }
       }
       this.clamp();
@@ -691,7 +710,7 @@ class Game {
   }
 
   _isScalingFloor() {
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions", "Sight of the Mazzeri"];
     const floor = this.level;
     // Base: floors 5, 8, 11, 14... (every 3 starting at 5)
     let isScaling = floor >= 5 && (floor - 5) % 3 === 0;
@@ -709,9 +728,9 @@ class Game {
     let pool = [...REGIONS[region]];
     pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
       "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
-      "Gallic Resolve");
-    if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave");
-    if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering");
+      "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre", "Sight of the Mazzeri");
+    if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
+    if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
 
     // Remove scaling cards from main pool so we control their placement
     const scalingPool = this._isScalingFloor();
@@ -786,7 +805,7 @@ class Game {
     this.rewardChoices = [];
     this.shopItems = [];
 
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions", "Sight of the Mazzeri"];
     const allCards = Object.keys(CARD_DB);
     const shopCardNames = this._sample(allCards.filter(n => !SCALING_CARDS.includes(n)), 4);
     // Guarantee 1 scaling card in every shop
