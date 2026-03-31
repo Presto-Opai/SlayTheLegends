@@ -202,8 +202,16 @@ function updateSidebar() {
   game.potions.forEach((p, i) => {
     const btn = document.createElement("button");
     btn.className = "potion-btn";
+    const potionScale = 1.0 + 0.1 * game.level;
+    const sv = (v) => Math.floor(v * potionScale);
+    let scaledDesc = p.desc;
+    if (["damage", "block", "heal"].includes(p.action)) {
+      scaledDesc = p.desc.replace(/\d+/, sv(p.value));
+    } else if (["strength", "vuln", "weak"].includes(p.action)) {
+      scaledDesc = p.desc.replace(/\d+/, Math.max(p.value, sv(p.value)));
+    }
     btn.textContent = `[${i + 1}] ${p.name}`;
-    btn.title = p.desc;
+    btn.title = scaledDesc;
     btn.addEventListener("click", () => { game.usePotion(i); redraw(); });
     potDiv.appendChild(btn);
   });
