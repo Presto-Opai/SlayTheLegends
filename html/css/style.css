@@ -299,3 +299,62 @@ button { cursor: pointer; font-family: inherit; }
   .legacy-grid { grid-template-columns: 1fr; }
   .energy-orb { width: 40px; height: 40px; font-size: 18px; }
 }
+
+/* ===================== PILE VIEWER ===================== */
+.pile-btn {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #7db8ff;
+}
+.pile-btn:hover { color: #fff; }
+.pile-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.pile-panel {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  padding: 20px;
+  min-width: 280px;
+  max-width: 400px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+.pile-panel-title {
+  font-size: 16px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: #e6f0ff;
+}
+.pile-panel-list {
+  overflow-y: auto;
+  flex: 1;
+  margin-bottom: 12px;
+}
+.pile-panel-row {
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 2px;
+  font-size: 13px;
+  cursor: default;
+}
+.pile-panel-row:hover { background: #21262d; }
+.pile-rarity-common { color: #9cc1ff; }
+.pile-rarity-uncommon { color: #5aff8a; }
+.pile-rarity-rare { color: #ff9e44; }
+.pile-close-btn {
+  align-self: center;
+  padding: 6px 20px;
+  background: #30363d;
+  color: #e6f0ff;
+  border: none;
+  border-radius: 6px;
+}
+.pile-close-btn:hover { background: #484f58; }

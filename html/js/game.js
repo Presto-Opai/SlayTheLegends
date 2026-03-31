@@ -298,7 +298,6 @@ class Game {
       case "metallicize": this.player.metallicize = (this.player.metallicize || 0) + 3; return "Metallicize: +3 block each turn!";
       case "juggernaut": this.player.juggernaut = (this.player.juggernaut || 0) + 3; return "Juggernaut: 3 dmg on block gain!";
       case "flameBarrier": this.player.flameBarrier = (this.player.flameBarrier || 0) + 4; return "Flame Barrier: 4 dmg on hit!";
-      case "battleTrance": this.handsize += 1; return "Battle Trance: +1 card per turn!";
       default: return card.text;
     }
   }
@@ -355,7 +354,8 @@ class Game {
     this.player.flameBarrier = 0;
     this.player.vuln = 0;
     this.player.weak = 0;
-    this.handsize = this.baseHandsize;
+    const mazzeriCount = this.relics.filter(r => r.name === "Sight of the Mazzeri").length;
+    this.handsize = this.baseHandsize + mazzeriCount;
     this.turnNumber = 0;
     this.revealedIntents = [];
     this.rampageBonus = {};
@@ -710,7 +710,7 @@ class Game {
 
     // Elite victory: guaranteed relic reward
     if (this.enemy.elite) {
-      const available = RELICS.filter(r => !this.hasRelic(r.name));
+      const available = RELICS.filter(r => !this.hasRelic(r.name) || r.effect === "card_draw");
       if (available.length > 0) {
         this.rewardType = "relic";
         this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
@@ -730,7 +730,7 @@ class Game {
         this.log = `Victory! +${goldGain} gold. Choose a potion.`;
       } else if (roll < 0.25 && this.level % 3 === 0) {
         this.rewardType = "relic";
-        const available = RELICS.filter(r => !this.hasRelic(r.name));
+        const available = RELICS.filter(r => !this.hasRelic(r.name) || r.effect === "card_draw");
         if (available.length > 0) {
           this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
           this.log = `Victory! +${goldGain} gold. Choose a relic!`;
@@ -754,7 +754,7 @@ class Game {
   }
 
   _isScalingFloor() {
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions", "Sight of the Mazzeri"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions"];
     const floor = this.level;
     // Base: floors 5, 8, 11, 14... (every 3 starting at 5)
     let isScaling = floor >= 5 && (floor - 5) % 3 === 0;
@@ -772,7 +772,7 @@ class Game {
     let pool = [...REGIONS[region]];
     pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
       "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
-      "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre", "Sight of the Mazzeri",
+      "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre",
       "Botte de Nevers", "Enchaînement", "Rempart de Vauban", "Ruse de Renart");
     if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
     if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
@@ -850,7 +850,7 @@ class Game {
     this.rewardChoices = [];
     this.shopItems = [];
 
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions", "Sight of the Mazzeri"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions"];
     const allCards = Object.keys(CARD_DB);
     const shopCardNames = this._sample(allCards.filter(n => !SCALING_CARDS.includes(n)), 4);
     // Guarantee 1 scaling card in every shop

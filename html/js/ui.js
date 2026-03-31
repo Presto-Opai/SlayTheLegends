@@ -137,7 +137,20 @@ function redraw() {
   playerSec.appendChild(energyOrb);
 
   const pileInfo = el("div", "pile-info");
-  pileInfo.textContent = `Draw: ${game.drawPile.length}  Discard: ${game.discard.length}  Floor: ${game.level}  Gold: ${game.gold}`;
+  const drawBtn = document.createElement("span");
+  drawBtn.className = "pile-btn";
+  drawBtn.textContent = `Draw: ${game.drawPile.length}`;
+  drawBtn.title = "Click to view draw pile";
+  drawBtn.addEventListener("click", () => { showPileOverlay("Draw Pile", game.drawPile); });
+  const discardBtn = document.createElement("span");
+  discardBtn.className = "pile-btn";
+  discardBtn.textContent = `Discard: ${game.discard.length}`;
+  discardBtn.title = "Click to view discard pile";
+  discardBtn.addEventListener("click", () => { showPileOverlay("Discard Pile", game.discard); });
+  pileInfo.appendChild(drawBtn);
+  pileInfo.appendChild(document.createTextNode("  "));
+  pileInfo.appendChild(discardBtn);
+  pileInfo.appendChild(document.createTextNode(`  Floor: ${game.level}  Gold: ${game.gold}`));
   playerSec.appendChild(pileInfo);
   main.appendChild(playerSec);
 
@@ -501,6 +514,46 @@ function renderLegacy(main) {
 
   main.appendChild(sec);
   updateSidebar();
+}
+
+function showPileOverlay(title, pile) {
+  const existing = document.getElementById("pile-overlay");
+  if (existing) existing.remove();
+
+  const overlay = el("div", "pile-overlay");
+  overlay.id = "pile-overlay";
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.remove(); });
+
+  const panel = el("div", "pile-panel");
+  const heading = el("div", "pile-panel-title");
+  heading.textContent = `${title} (${pile.length} cards)`;
+  panel.appendChild(heading);
+
+  // Count cards by name
+  const counts = {};
+  pile.forEach(c => { counts[c.name] = (counts[c.name] || 0) + 1; });
+  const sorted = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0]));
+
+  const list = el("div", "pile-panel-list");
+  for (const [name, count] of sorted) {
+    const card = CARD_DB[name];
+    const row = el("div", "pile-panel-row");
+    const rarity = card ? (card.rarity || "common") : "common";
+    row.classList.add(`pile-rarity-${rarity}`);
+    row.textContent = count > 1 ? `${name} x${count}` : name;
+    if (card) row.title = card.text;
+    list.appendChild(row);
+  }
+  panel.appendChild(list);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn pile-close-btn";
+  closeBtn.textContent = "Close";
+  closeBtn.addEventListener("click", () => overlay.remove());
+  panel.appendChild(closeBtn);
+
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
 }
 
 // Init on load
