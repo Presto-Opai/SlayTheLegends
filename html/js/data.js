@@ -7,7 +7,7 @@ const REGIONS = {
   "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide", "Rempart de Vauban"],
   "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes"],
   "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Rage du Diable"],
-  "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse", "Sight of the Mazzeri"],
+  "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse"],
   "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Armure aux Lions", "Ruse de Renart"],
   "Occitanie": ["Lou Pastre Ballad", "Fées de l'Orb", "Cathar Resolve", "Enchaînement"],
   "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Fureur de Woinic"],
@@ -106,7 +106,6 @@ function makeCardDB() {
   add("Armure aux Lions", 1, "Power", "Gain 3 block at the start of each turn. Exhaust.", "metallicize", "uncommon");
   add("Fureur de Woinic", 2, "Power", "Deal 3 damage to enemy whenever you gain block. Exhaust.", "juggernaut", "uncommon");
   add("Jeanne's Pyre", 1, "Power", "When hit, deal 4 damage back. Exhaust.", "flameBarrier", "uncommon");
-  add("Sight of the Mazzeri", 1, "Power", "+1 card drawn per turn. Exhaust.", "battleTrance", "uncommon");
 
   return db;
 }
@@ -124,6 +123,7 @@ const RELICS = [
   { name: "Pen Nib", desc: "Every 10th attack deals double damage.", effect: "pen_nib", value: 10 },
   { name: "Torii", desc: "If you take 5 or less damage, reduce to 1.", effect: "torii", value: 5 },
   { name: "Meat on Bone", desc: "Heal 12 HP after combat if below 50% HP.", effect: "conditional_heal", value: 12 },
+  { name: "Sight of the Mazzeri", desc: "+1 card drawn per turn. Stacks.", effect: "card_draw", value: 1 },
 ];
 
 const POTIONS = [
