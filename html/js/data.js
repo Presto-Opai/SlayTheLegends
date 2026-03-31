@@ -3,14 +3,14 @@
 
 const REGIONS = {
   "Bretagne": ["Ankou's Scythe", "Korrigan Trick", "Washerwomen's Omen"],
-  "Provence": ["Tarasque Roar", "Drac of Camargue", "Santons' Blessing"],
+  "Provence": ["Tarasque Roar", "Drac of Camargue", "Santons' Blessing", "Flame Barrier"],
   "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide"],
   "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes"],
-  "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield"],
-  "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse"],
-  "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile"],
+  "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Demon Form"],
+  "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse", "Battle Trance"],
+  "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Metallicize"],
   "Occitanie": ["Lou Pastre Ballad", "Fées de l'Orb", "Cathar Resolve"],
-  "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush"],
+  "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Juggernaut"],
   "Alsace": ["Stork's Blessing", "Hans Trapp's Fury", "Rhine Gold"],
 };
 
@@ -29,8 +29,8 @@ function makeCardDB() {
   add("Focus", 1, "Skill", "Draw 2.", "draw2");
   add("Expose", 1, "Skill", "Apply 1 Vulnerable.", "vuln1");
   add("Hamper", 1, "Skill", "Apply 1 Weak.", "weak1");
-  add("Fortify", 2, "Power", "+1 armor permanently.", "fortify", "uncommon");
-  add("Rally", 2, "Power", "+1 strength permanently.", "rally", "uncommon");
+  add("Fortify", 2, "Power", "+2 armor permanently. Exhaust.", "fortify", "uncommon");
+  add("Rally", 2, "Power", "+2 strength permanently. Exhaust.", "rally", "uncommon");
 
   // Neutral uncommon/rare
   add("Adrenaline Rush", 0, "Skill", "Gain 2 energy. Draw 1. Exhaust a card from hand. Exhaust.", "adrenalineRush", "rare");
@@ -43,7 +43,7 @@ function makeCardDB() {
   add("Shockwave", 2, "Skill", "Apply 3 Weak and 3 Vulnerable.", "shockwave", "rare");
   add("Body Slam", 1, "Attack", "Deal damage equal to your Block.", "bodySlam", "uncommon");
   add("Cleave", 1, "Attack", "Deal 9 damage.", "atk9");
-  add("Gallic Resolve", 1, "Power", "+1 armor. Apply 1 Weak.", "gallicResolve", "uncommon");
+  add("Gallic Resolve", 1, "Power", "+1 armor. Apply 1 Weak. Exhaust.", "gallicResolve", "uncommon");
 
   // Bretagne
   add("Ankou's Scythe", 2, "Attack", "Deal 10. Apply 1 Vulnerable.", "ankouScythe", "uncommon");
@@ -67,7 +67,7 @@ function makeCardDB() {
 
   // Auvergne
   add("Bête du Gévaudan", 2, "Attack", "Deal 14.", "atk14", "uncommon");
-  add("Volcan's Breath", 1, "Power", "+1 strength. Apply 1 Vulnerable.", "volcanBreath", "uncommon");
+  add("Volcan's Breath", 1, "Power", "+1 strength. Apply 1 Vulnerable. Exhaust.", "volcanBreath", "uncommon");
   add("Cantal Shield", 1, "Skill", "Gain 7 block.", "block7");
 
   // Val de Loire
@@ -81,7 +81,7 @@ function makeCardDB() {
   add("Smugglers' Wile", 1, "Skill", "Draw 2. Discard 1.", "smugglersWile");
 
   // Occitanie
-  add("Lou Pastre Ballad", 1, "Power", "Start each turn with 2 block.", "louPastreBallad", "uncommon");
+  add("Lou Pastre Ballad", 1, "Power", "Start each turn with 2 block. Exhaust.", "louPastreBallad", "uncommon");
   add("Fées de l'Orb", 1, "Skill", "Heal 3. Draw 1.", "feesOrb");
   add("Cathar Resolve", 2, "Skill", "Gain 9 block. Remove Weak from you.", "catharResolve", "uncommon");
 
@@ -94,6 +94,13 @@ function makeCardDB() {
   add("Stork's Blessing", 1, "Skill", "Heal 4. Gain 4 block.", "storkBlessing");
   add("Hans Trapp's Fury", 2, "Attack", "Deal 8. Apply 2 Weak.", "hansTrapFury", "uncommon");
   add("Rhine Gold", 0, "Skill", "Gain 1 energy. Gain 3 block.", "rhineGold", "uncommon");
+
+  // New Power cards — more scaling options for midgame
+  add("Demon Form", 2, "Power", "+2 strength at the start of each turn. Exhaust.", "demonForm", "rare");
+  add("Metallicize", 1, "Power", "Gain 3 block at the start of each turn. Exhaust.", "metallicize", "uncommon");
+  add("Juggernaut", 2, "Power", "Deal 3 damage to enemy whenever you gain block. Exhaust.", "juggernaut", "uncommon");
+  add("Flame Barrier", 1, "Power", "When hit, deal 4 damage back. Exhaust.", "flameBarrier", "uncommon");
+  add("Battle Trance", 1, "Power", "+1 card drawn per turn. Exhaust.", "battleTrance", "uncommon");
 
   return db;
 }
