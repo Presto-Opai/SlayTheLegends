@@ -625,20 +625,12 @@ class Game {
     }
 
     // Combo cards
-    if (played.effectKey === "botteSecrete") {
-      const triggered = this.skillsThisTurn > 0;
-      const dmg = triggered ? 12 : 5;
-      this.dealDamage(dmg, "You");
+    if (played.effectKey === "botteDeNevers") {
+      this.dealDamage(5, "You");
+      const extras = this.skillsThisTurn;
+      for (let i = 0; i < extras; i++) this.dealDamage(4, "You");
       this.discardOrExhaust(played);
-      this.log = triggered ? `Botte Secrète: 12 damage! (combo)` : `Botte Secrète: 5 damage.`;
-      if (this.enemy.hp <= 0) { this.winBattle(); return; }
-      return;
-    }
-    if (played.effectKey === "contreAttaque") {
-      const triggered = this.player.block >= 10;
-      if (triggered) { this.gainBlock(8); this.dealDamage(6, "You"); this.log = "Contre-Attaque: +8 block, 6 damage! (combo)"; }
-      else { this.gainBlock(4); this.dealDamage(3, "You"); this.log = "Contre-Attaque: +4 block, 3 damage."; }
-      this.discardOrExhaust(played);
+      this.log = extras > 0 ? `Botte de Nevers: 5 + ${extras}x4 damage! (${extras} Skills)` : `Botte de Nevers: 5 damage.`;
       if (this.enemy.hp <= 0) { this.winBattle(); return; }
       return;
     }
@@ -646,31 +638,6 @@ class Game {
       const triggered = this.attacksThisTurn >= 3; // this card is the 3rd+ attack
       if (triggered) { this.dealDamage(9, "You"); this.draw(1); this.log = "Enchaînement: 9 damage, drew 1! (combo)"; }
       else { this.dealDamage(3, "You"); this.log = "Enchaînement: 3 damage."; }
-      this.discardOrExhaust(played);
-      if (this.enemy.hp <= 0) { this.winBattle(); return; }
-      return;
-    }
-    if (played.effectKey === "dernierSouffle") {
-      const triggered = this.player.hp < this.player.max_hp * 0.5;
-      const dmg = triggered ? 20 : 10;
-      this.dealDamage(dmg, "You");
-      this.discardOrExhaust(played);
-      this.log = triggered ? `Dernier Souffle: 20 damage! (combo)` : `Dernier Souffle: 10 damage.`;
-      if (this.enemy.hp <= 0) { this.winBattle(); return; }
-      return;
-    }
-    if (played.effectKey === "gardeRoyale") {
-      const triggered = this.attacksThisTurn > 0;
-      const blk = triggered ? 10 : 4;
-      this.gainBlock(blk);
-      this.discardOrExhaust(played);
-      this.log = triggered ? `Garde Royale: +10 block! (combo)` : `Garde Royale: +4 block.`;
-      return;
-    }
-    if (played.effectKey === "foudreZeus") {
-      const triggered = this.enemy.weak > 0 && this.enemy.vuln > 0;
-      if (triggered) { this.dealDamage(20, "You"); this.applyWeak(1); this.log = "Foudre de Zeus: 20 damage + 1 Weak! (combo)"; }
-      else { this.dealDamage(8, "You"); this.log = "Foudre de Zeus: 8 damage."; }
       this.discardOrExhaust(played);
       if (this.enemy.hp <= 0) { this.winBattle(); return; }
       return;
@@ -785,9 +752,9 @@ class Game {
     pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
       "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
       "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre", "Sight of the Mazzeri",
-      "Botte Secrète", "Garde Royale", "Contre-Attaque", "Enchaînement");
-    if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic", "Dernier Souffle");
-    if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable", "Foudre de Zeus");
+      "Botte de Nevers", "Enchaînement");
+    if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
+    if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
 
     // Remove scaling cards from main pool so we control their placement
     const scalingPool = this._isScalingFloor();

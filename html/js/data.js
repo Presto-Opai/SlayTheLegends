@@ -2,16 +2,16 @@
 // Cards, Relics, Potions, Enemies, Meta Upgrades
 
 const REGIONS = {
-  "Bretagne": ["Ankou's Scythe", "Korrigan Trick", "Washerwomen's Omen", "Botte Secrète"],
+  "Bretagne": ["Ankou's Scythe", "Korrigan Trick", "Washerwomen's Omen", "Botte de Nevers"],
   "Provence": ["Tarasque Roar", "Drac of Camargue", "Santons' Blessing", "Jeanne's Pyre"],
-  "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide", "Garde Royale"],
-  "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes", "Contre-Attaque"],
+  "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide"],
+  "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes"],
   "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Rage du Diable"],
   "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse", "Sight of the Mazzeri"],
   "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Armure aux Lions"],
   "Occitanie": ["Lou Pastre Ballad", "Fées de l'Orb", "Cathar Resolve", "Enchaînement"],
   "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Fureur de Woinic"],
-  "Alsace": ["Stork's Blessing", "Hans Trapp's Fury", "Rhine Gold", "Foudre de Zeus"],
+  "Alsace": ["Stork's Blessing", "Hans Trapp's Fury", "Rhine Gold"],
 };
 
 const RARITY_COLORS = { common: "#9cc1ff", uncommon: "#5aff8a", rare: "#ff9e44" };
@@ -96,12 +96,8 @@ function makeCardDB() {
   add("Rhine Gold", 0, "Skill", "Gain 1 energy. Gain 3 block.", "rhineGold", "uncommon");
 
   // Combo cards — stronger when trigger condition is met
-  add("Botte Secrète", 1, "Attack", "Deal 5 damage. If you played a Skill this turn, deal 12 instead.", "botteSecrete", "uncommon");
-  add("Contre-Attaque", 1, "Skill", "Gain 4 block, deal 3 damage. If you have 10+ block, gain 8 block and deal 6 instead.", "contreAttaque", "uncommon");
+  add("Botte de Nevers", 1, "Attack", "Deal 5 damage. Deal an extra 4 damage hit for each Skill played this turn.", "botteDeNevers", "uncommon");
   add("Enchaînement", 0, "Attack", "Deal 3 damage. If you played 2+ Attacks this turn, deal 9 and draw 1.", "enchainement", "uncommon");
-  add("Dernier Souffle", 2, "Attack", "Deal 10 damage. If HP below 50%, deal 20 instead.", "dernierSouffle", "rare");
-  add("Garde Royale", 1, "Skill", "Gain 4 block. If you played an Attack this turn, gain 10 instead.", "gardeRoyale", "uncommon");
-  add("Foudre de Zeus", 2, "Attack", "Deal 8 damage. If enemy has Weak AND Vulnerable, deal 20 and apply 1 Weak.", "foudreZeus", "rare");
 
   // New Power cards — more scaling options for midgame
   add("Rage du Diable", 2, "Power", "+2 strength at the start of each turn. Exhaust.", "demonForm", "rare");
