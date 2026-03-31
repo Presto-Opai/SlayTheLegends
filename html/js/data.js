@@ -2,14 +2,14 @@
 // Cards, Relics, Potions, Enemies, Meta Upgrades
 
 const REGIONS = {
-  "Bretagne": ["Ankou's Scythe", "Korrigan Trick", "Washerwomen's Omen"],
+  "Bretagne": ["Ankou's Scythe", "Korrigan Trick", "Washerwomen's Omen", "Botte de Nevers"],
   "Provence": ["Tarasque Roar", "Drac of Camargue", "Santons' Blessing", "Jeanne's Pyre"],
-  "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide"],
+  "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide", "Rempart de Vauban"],
   "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes"],
   "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Rage du Diable"],
   "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse", "Sight of the Mazzeri"],
-  "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Armure aux Lions"],
-  "Occitanie": ["Lou Pastre Ballad", "Fées de l'Orb", "Cathar Resolve"],
+  "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Armure aux Lions", "Ruse de Renart"],
+  "Occitanie": ["Lou Pastre Ballad", "Fées de l'Orb", "Cathar Resolve", "Enchaînement"],
   "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Fureur de Woinic"],
   "Alsace": ["Stork's Blessing", "Hans Trapp's Fury", "Rhine Gold"],
 };
@@ -33,7 +33,7 @@ function makeCardDB() {
   add("Rally", 2, "Power", "+2 strength permanently. Exhaust.", "rally", "uncommon");
 
   // Neutral uncommon/rare
-  add("Adrenaline Rush", 0, "Skill", "Gain 2 energy. Draw 1. Exhaust a card from hand. Exhaust.", "adrenalineRush", "rare");
+  add("Adrenaline Rush", 0, "Skill", "Gain 2 energy. Draw 2. Exhaust a card from hand. Exhaust.", "adrenalineRush", "rare");
   add("Whirlwind", 0, "Attack", "Deal 4 damage X times (X = energy). Spend all energy.", "whirlwind", "rare");
   add("Second Wind", 1, "Skill", "Gain 3 block for each card in hand.", "secondWind", "uncommon");
   add("Blood Pact", 0, "Attack", "Lose 3 HP. Deal 12 damage.", "bloodPact", "uncommon");
@@ -94,6 +94,12 @@ function makeCardDB() {
   add("Stork's Blessing", 1, "Skill", "Heal 4. Gain 4 block.", "storkBlessing");
   add("Hans Trapp's Fury", 2, "Attack", "Deal 8. Apply 2 Weak.", "hansTrapFury", "uncommon");
   add("Rhine Gold", 0, "Skill", "Gain 1 energy. Gain 3 block.", "rhineGold", "uncommon");
+
+  // Combo cards — stronger when trigger condition is met
+  add("Botte de Nevers", 1, "Attack", "Deal 5 damage. Deal an extra 4 damage hit for each Skill played this turn.", "botteDeNevers", "uncommon");
+  add("Enchaînement", 0, "Attack", "Deal 3 damage. If you played 2+ Attacks this turn, deal 9 and draw 1.", "enchainement", "uncommon");
+  add("Rempart de Vauban", 1, "Skill", "Gain 4 block. Gain 3 extra block for each Attack played this turn.", "rempartVauban", "uncommon");
+  add("Ruse de Renart", 0, "Attack", "Deal 2 damage. If enemy intends to block, apply 1 Vulnerable then deal 8.", "ruseRenart", "uncommon");
 
   // New Power cards — more scaling options for midgame
   add("Rage du Diable", 2, "Power", "+2 strength at the start of each turn. Exhaust.", "demonForm", "rare");

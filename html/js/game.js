@@ -256,9 +256,9 @@ class Game {
       case "fortify": this.player.armor += 2; return "+2 armor (persists).";
       case "rally": this.player.strength += 2; return "+2 strength (persists).";
       case "adrenalineRush": {
-        this.changeEnergy(2); this.draw(1);
+        this.changeEnergy(2); this.draw(2);
         if (this.hand.length > 0) { const i = Math.floor(Math.random() * this.hand.length); const c = this.hand.splice(i, 1)[0]; this.exhaust.push(c); }
-        return "+2 energy, drew 1. Exhausted a card.";
+        return "+2 energy, drew 2. Exhausted a card.";
       }
       case "bloodPact": this.selfDamage(3); this.dealDamage(12, "You"); return "Blood for power: 12 dmg!";
       case "block16": this.gainBlock(16); return "Gain 16 block.";
@@ -378,6 +378,8 @@ class Game {
     if (this.player.song_block > 0) this.player.block += this.player.song_block;
     if (this.player.demonForm > 0) this.player.strength += this.player.demonForm;
     if (this.player.metallicize > 0) this.gainBlock(this.player.metallicize);
+    this.attacksThisTurn = 0;
+    this.skillsThisTurn = 0;
     if (this.hasRelic("Horn Cleat") && this.turnNumber === 2) this.energy += 1;
     // Nightmare draw penalty
     const drawAmount = Math.max(1, this.handsize - (this.drawPenalty || 0));
@@ -543,6 +545,8 @@ class Game {
     const played = this.hand.splice(idx, 1)[0];
     this.energy -= played.cost;
     if (played.type === "Attack") this.attacksPlayed++;
+    if (played.type === "Attack") this.attacksThisTurn++;
+    if (played.type === "Skill") this.skillsThisTurn++;
 
     // Special cards
     if (played.effectKey === "dameBlanche") {
@@ -615,6 +619,46 @@ class Game {
         this.dealDamage(3, "You");
         this.log = "Maquis Ambush: 3 damage.";
       }
+      this.discardOrExhaust(played);
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+
+    // Combo cards
+    if (played.effectKey === "botteDeNevers") {
+      this.dealDamage(5, "You");
+      const extras = this.skillsThisTurn;
+      for (let i = 0; i < extras; i++) this.dealDamage(4, "You");
+      this.discardOrExhaust(played);
+      this.log = extras > 0 ? `Botte de Nevers: 5 + ${extras}x4 damage! (${extras} Skills)` : `Botte de Nevers: 5 damage.`;
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+    if (played.effectKey === "rempartVauban") {
+      const extras = this.attacksThisTurn;
+      const total = 4 + extras * 3;
+      this.gainBlock(total);
+      this.discardOrExhaust(played);
+      this.log = extras > 0 ? `Rempart de Vauban: +${total} block! (${extras} Attacks)` : `Rempart de Vauban: +4 block.`;
+      return;
+    }
+    if (played.effectKey === "ruseRenart") {
+      if (this.enemyIntent.type === "block") {
+        this.applyVuln(1);
+        this.dealDamage(8, "You");
+        this.log = "Ruse de Renart: 1 Vulnerable, then 8 damage! (combo)";
+      } else {
+        this.dealDamage(2, "You");
+        this.log = "Ruse de Renart: 2 damage.";
+      }
+      this.discardOrExhaust(played);
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+    if (played.effectKey === "enchainement") {
+      const triggered = this.attacksThisTurn >= 3; // this card is the 3rd+ attack
+      if (triggered) { this.dealDamage(9, "You"); this.draw(1); this.log = "Enchaînement: 9 damage, drew 1! (combo)"; }
+      else { this.dealDamage(3, "You"); this.log = "Enchaînement: 3 damage."; }
       this.discardOrExhaust(played);
       if (this.enemy.hp <= 0) { this.winBattle(); return; }
       return;
@@ -728,7 +772,8 @@ class Game {
     let pool = [...REGIONS[region]];
     pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
       "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
-      "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre", "Sight of the Mazzeri");
+      "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre", "Sight of the Mazzeri",
+      "Botte de Nevers", "Enchaînement", "Rempart de Vauban", "Ruse de Renart");
     if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
     if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
 
