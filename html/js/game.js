@@ -295,7 +295,7 @@ class Game {
       case "rhineGold": this.changeEnergy(1); this.gainBlock(3); return "Golden light: +1 energy, +3 block.";
       case "gallicResolve": this.player.armor += 1; this.applyWeak(1); return "Gallic Resolve: +1 armor, 1 Weak!";
       case "demonForm": this.player.demonForm = (this.player.demonForm || 0) + 2; return "Demon Form: +2 STR each turn!";
-      case "metallicize": this.player.metallicize = (this.player.metallicize || 0) + 3; return "Metallicize: +3 block each turn!";
+      case "armureLions": this.player.armor += 3; return "Armure aux Lions: +3 permanent armor!";
       case "juggernaut": this.player.juggernaut = (this.player.juggernaut || 0) + 3; return "Juggernaut: 3 dmg on block gain!";
       case "flameBarrier": this.player.flameBarrier = (this.player.flameBarrier || 0) + 4; return "Flame Barrier: 4 dmg on hit!";
       default: return card.text;
@@ -351,7 +351,6 @@ class Game {
     this.player.strength -= (this.player.demonFormStr || 0);
     this.player.demonForm = 0;
     this.player.demonFormStr = 0;
-    this.player.metallicize = 0;
     this.player.juggernaut = 0;
     this.player.flameBarrier = 0;
     this.player.vuln = 0;
@@ -379,7 +378,6 @@ class Game {
     this.player.block = Math.floor(this.player.block * 0.25);
     if (this.player.song_block > 0) this.player.block += this.player.song_block;
     if (this.player.demonForm > 0) { this.player.strength += this.player.demonForm; this.player.demonFormStr = (this.player.demonFormStr || 0) + this.player.demonForm; }
-    if (this.player.metallicize > 0) this.gainBlock(this.player.metallicize);
     this.attacksThisTurn = 0;
     this.skillsThisTurn = 0;
     if (this.hasRelic("Horn Cleat") && this.turnNumber === 2) this.energy += 1;
@@ -756,7 +754,7 @@ class Game {
   }
 
   _isScalingFloor() {
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable"];
     const floor = this.level;
     // Base: floors 5, 8, 11, 14... (every 3 starting at 5)
     let isScaling = floor >= 5 && (floor - 5) % 3 === 0;
@@ -852,7 +850,7 @@ class Game {
     this.rewardChoices = [];
     this.shopItems = [];
 
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable", "Armure aux Lions"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable"];
     const allCards = Object.keys(CARD_DB);
     const shopCardNames = this._sample(allCards.filter(n => !SCALING_CARDS.includes(n)), 4);
     // Guarantee 1 scaling card in every shop
@@ -870,7 +868,7 @@ class Game {
     const pot = POTIONS[Math.floor(Math.random() * POTIONS.length)];
     this.shopItems.push({ item: { ...pot }, price: this.randInt(20, 35), type: "potion", sold: false });
 
-    const availableRelics = RELICS.filter(r => !this.hasRelic(r.name));
+    const availableRelics = RELICS.filter(r => !this.hasRelic(r.name) || r.effect === "card_draw");
     if (availableRelics.length > 0) {
       const rel = availableRelics[Math.floor(Math.random() * availableRelics.length)];
       this.shopItems.push({ item: { ...rel }, price: this.randInt(80, 120), type: "relic", sold: false });
