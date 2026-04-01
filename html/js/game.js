@@ -355,8 +355,7 @@ class Game {
     this.player.flameBarrier = 0;
     this.player.vuln = 0;
     this.player.weak = 0;
-    const mazzeriCount = this.relics.filter(r => r.name === "Sight of the Mazzeri").length;
-    this.handsize = this.baseHandsize + mazzeriCount;
+    this.handsize = this.baseHandsize + (this.hasRelic("Sight of the Mazzeri") ? 1 : 0);
     this.turnNumber = 0;
     this.revealedIntents = [];
     this.rampageBonus = {};
@@ -710,7 +709,7 @@ class Game {
 
     // Elite victory: guaranteed relic reward
     if (this.enemy.elite) {
-      const available = RELICS.filter(r => !this.hasRelic(r.name) || r.effect === "card_draw");
+      const available = RELICS.filter(r => !this.hasRelic(r.name));
       if (available.length > 0) {
         this.rewardType = "relic";
         this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
@@ -730,7 +729,7 @@ class Game {
         this.log = `Victory! +${goldGain} gold. Choose a potion.`;
       } else if (roll < 0.25 && this.level % 3 === 0) {
         this.rewardType = "relic";
-        const available = RELICS.filter(r => !this.hasRelic(r.name) || r.effect === "card_draw");
+        const available = RELICS.filter(r => !this.hasRelic(r.name));
         if (available.length > 0) {
           this.rewardChoices = this._sample(available, 3).map(r => ({ ...r }));
           this.log = `Victory! +${goldGain} gold. Choose a relic!`;
@@ -868,7 +867,7 @@ class Game {
     const pot = POTIONS[Math.floor(Math.random() * POTIONS.length)];
     this.shopItems.push({ item: { ...pot }, price: this.randInt(20, 35), type: "potion", sold: false });
 
-    const availableRelics = RELICS.filter(r => !this.hasRelic(r.name) || r.effect === "card_draw");
+    const availableRelics = RELICS.filter(r => !this.hasRelic(r.name));
     if (availableRelics.length > 0) {
       const rel = availableRelics[Math.floor(Math.random() * availableRelics.length)];
       this.shopItems.push({ item: { ...rel }, price: this.randInt(80, 120), type: "relic", sold: false });
