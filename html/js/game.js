@@ -348,7 +348,9 @@ class Game {
     this.damageTakenThisCombat = 0;
     this.drawPenalty = 0;
     this.player.song_block = 0;
+    this.player.strength -= (this.player.demonFormStr || 0);
     this.player.demonForm = 0;
+    this.player.demonFormStr = 0;
     this.player.metallicize = 0;
     this.player.juggernaut = 0;
     this.player.flameBarrier = 0;
@@ -376,7 +378,7 @@ class Game {
     // Retain 25% of block between turns (Endurance)
     this.player.block = Math.floor(this.player.block * 0.25);
     if (this.player.song_block > 0) this.player.block += this.player.song_block;
-    if (this.player.demonForm > 0) this.player.strength += this.player.demonForm;
+    if (this.player.demonForm > 0) { this.player.strength += this.player.demonForm; this.player.demonFormStr = (this.player.demonFormStr || 0) + this.player.demonForm; }
     if (this.player.metallicize > 0) this.gainBlock(this.player.metallicize);
     this.attacksThisTurn = 0;
     this.skillsThisTurn = 0;
