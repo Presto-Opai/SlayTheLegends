@@ -17,6 +17,7 @@ function bindEvents() {
   document.getElementById("btn-load").addEventListener("click", loadGame);
   document.getElementById("btn-legacy").addEventListener("click", toggleLegacy);
   document.getElementById("btn-restart").addEventListener("click", restart);
+  document.getElementById("btn-reset-game").addEventListener("click", resetGame);
 
   document.addEventListener("keydown", e => {
     if (e.key === "r" || e.key === "R") restart();
@@ -29,6 +30,16 @@ function bindEvents() {
 }
 
 function restart() {
+  showingLegacy = false;
+  game = new Game(meta);
+  redraw();
+}
+
+function resetGame() {
+  if (!confirm("This will restart the game from scratch, removing all progress, stats and legacy points. Are you sure?")) return;
+  localStorage.removeItem("legendes_meta");
+  localStorage.removeItem("legendes_save");
+  meta = new MetaProgress();
   showingLegacy = false;
   game = new Game(meta);
   redraw();
@@ -454,7 +465,7 @@ function renderDeath(main) {
   sec.appendChild(pts);
 
   const hint = el("div", "death-hint");
-  hint.textContent = "R = restart    L = legacy (upgrades)";
+  hint.textContent = "R = restart run    L = legacy (upgrades)";
   sec.appendChild(hint);
 
   main.appendChild(sec);
