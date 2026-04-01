@@ -216,7 +216,7 @@ class Game {
     this.revealedIntents = [];
     for (let i = 0; i < n; i++) {
       if (Math.random() < this.enemy.block_chance) {
-        this.revealedIntents.push({ type: "block", value: this.randInt(6, 10) });
+        this.revealedIntents.push({ type: "block", value: this.enemyBlockValue() });
       } else {
         this.revealedIntents.push({ type: "attack", value: this.randInt(this.enemy.atk_min, this.enemy.atk_max) });
       }
@@ -408,9 +408,16 @@ class Game {
     if (this.player.vuln > 0) this.player.vuln--;
   }
 
+  enemyBlockValue() {
+    const base = this.randInt(6, 10);
+    const lvl = this.level;
+    const scale = lvl <= 40 ? 1.0 + 0.05 * lvl : 3.0 + 0.1 * (lvl - 40);
+    return Math.floor(base * scale);
+  }
+
   pickEnemyIntent() {
     if (Math.random() < this.enemy.block_chance) {
-      this.enemyIntent = { type: "block", value: this.randInt(6, 10) };
+      this.enemyIntent = { type: "block", value: this.enemyBlockValue() };
     } else {
       const val = this.randInt(this.enemy.atk_min, this.enemy.atk_max);
       const special = this.enemy.special;
