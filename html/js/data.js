@@ -103,7 +103,7 @@ function makeCardDB() {
 
   // New Power cards — more scaling options for midgame
   add("Rage du Diable", 2, "Power", "+2 strength at the start of each turn. Exhaust.", "demonForm", "rare");
-  add("Armure aux Lions", 3, "Skill", "Gain 3 permanent armor.", "armureLions", "uncommon");
+  add("Armure aux Lions", 3, "Skill", "Gain 3 permanent armor. Exhaust.", "armureLions", "uncommon");
   add("Fureur de Woinic", 2, "Power", "Deal 3 damage to enemy whenever you gain block. Exhaust.", "juggernaut", "uncommon");
   add("Jeanne's Pyre", 1, "Power", "When hit, deal 4 damage back. Exhaust.", "flameBarrier", "uncommon");
 
@@ -123,7 +123,7 @@ const RELICS = [
   { name: "Pen Nib", desc: "Every 10th attack deals double damage.", effect: "pen_nib", value: 10 },
   { name: "Torii", desc: "If you take 5 or less damage, reduce to 1.", effect: "torii", value: 5 },
   { name: "Meat on Bone", desc: "Heal 12 HP after combat if below 50% HP.", effect: "conditional_heal", value: 12 },
-  { name: "Sight of the Mazzeri", desc: "+1 card drawn per turn. Stacks.", effect: "card_draw", value: 1 },
+  { name: "Sight of the Mazzeri", desc: "+1 card drawn per turn.", effect: "card_draw", value: 1 },
 ];
 
 const POTIONS = [
