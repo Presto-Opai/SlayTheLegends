@@ -35,13 +35,25 @@ function restart() {
   redraw();
 }
 
+let pendingReset = false;
+
 function resetGame() {
-  if (!confirm("This will restart the game from scratch, removing all progress, stats and legacy points. Are you sure?")) return;
+  pendingReset = true;
+  redraw();
+}
+
+function confirmReset() {
   localStorage.removeItem("legendes_meta");
   localStorage.removeItem("legendes_save");
   meta = new MetaProgress();
   showingLegacy = false;
+  pendingReset = false;
   game = new Game(meta);
+  redraw();
+}
+
+function cancelReset() {
+  pendingReset = false;
   redraw();
 }
 
@@ -74,6 +86,7 @@ function redraw() {
   const main = document.getElementById("game-area");
   main.innerHTML = "";
 
+  if (pendingReset) { renderResetConfirm(main); return; }
   if (showingLegacy) { renderLegacy(main); return; }
   if (game.dead) { renderDeath(main); return; }
   if (game._scryCards) { renderScry(main); return; }
@@ -447,6 +460,32 @@ function renderRemoval(main) {
   sec.appendChild(cancelBtn);
   main.appendChild(sec);
   updateSidebar();
+}
+
+function renderResetConfirm(main) {
+  const sec = el("div", "death-section");
+  const title = el("div", "death-title");
+  title.textContent = "RESET GAME";
+  sec.appendChild(title);
+
+  const info = el("div", "death-info");
+  info.textContent = "This will restart the game from scratch, removing all progress, stats and legacy points. Are you sure?";
+  sec.appendChild(info);
+
+  const row = el("div", "btn-row");
+  row.style.justifyContent = "center";
+  row.style.marginTop = "20px";
+  const okBtn = el("button", "btn btn-cancel");
+  okBtn.textContent = "OK";
+  okBtn.addEventListener("click", confirmReset);
+  const cancelBtn = el("button", "btn btn-shop");
+  cancelBtn.textContent = "Cancel";
+  cancelBtn.addEventListener("click", cancelReset);
+  row.appendChild(okBtn);
+  row.appendChild(cancelBtn);
+  sec.appendChild(row);
+
+  main.appendChild(sec);
 }
 
 function renderDeath(main) {
