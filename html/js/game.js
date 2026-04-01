@@ -361,7 +361,6 @@ class Game {
     this.rampageBonus = {};
 
     if (this.hasRelic("Bag of Marbles")) this.enemy.vuln += 1;
-    if (this.hasRelic("Anchor")) this.player.block += 10;
 
     this.inReward = false;
     this.startPlayerTurn();
@@ -376,6 +375,7 @@ class Game {
     // Retain 25% of block between turns (Endurance)
     this.player.block = Math.floor(this.player.block * 0.25);
     if (this.player.song_block > 0) this.player.block += this.player.song_block;
+    if (this.hasRelic("Anchor") && this.turnNumber === 1) this.player.block += 10;
     if (this.player.demonForm > 0) { this.player.strength += this.player.demonForm; this.player.demonFormStr = (this.player.demonFormStr || 0) + this.player.demonForm; }
     this.attacksThisTurn = 0;
     this.skillsThisTurn = 0;
