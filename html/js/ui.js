@@ -676,44 +676,96 @@ function renderChallengeSelect(main) {
 
 // ===================== VICTORY SCREEN =====================
 function renderVictory(main) {
-  // Check if all challenges are complete
-  if (meta.allChallengesComplete()) {
-    renderFinalVictory(main);
-    return;
-  }
+  if (meta.allChallengesComplete()) { renderFinalVictory(main); return; }
 
   const sec = el("div", "victory-section");
-  const title = el("div", "victory-title");
-  title.textContent = "VICTORY";
+
+  // Particle container
+  const particles = el("div", "victory-particles");
+  for (let i = 0; i < 30; i++) {
+    const p = el("div", "victory-particle");
+    p.style.left = Math.random() * 100 + "%";
+    p.style.animationDelay = Math.random() * 4 + "s";
+    p.style.animationDuration = (3 + Math.random() * 4) + "s";
+    particles.appendChild(p);
+  }
+  sec.appendChild(particles);
+
+  // Light burst
+  const burst = el("div", "victory-burst");
+  sec.appendChild(burst);
+
+  // Shadow dissolve text
+  const dissolve = el("div", "victory-dissolve anim-stagger-1");
+  dissolve.textContent = "L'Ombre Souveraine";
+  sec.appendChild(dissolve);
+
+  // Main title
+  const title = el("div", "victory-title anim-stagger-2");
+  title.textContent = "VICTOIRE";
   sec.appendChild(title);
 
-  const bossName = el("div", "victory-boss");
-  bossName.textContent = "L'Ombre Souveraine has been vanquished!";
-  sec.appendChild(bossName);
+  // Lore line
+  const lore = el("div", "victory-lore anim-stagger-3");
+  lore.textContent = "The shadow recedes. The legends of France endure.";
+  sec.appendChild(lore);
 
+  // Divider
+  const divider = el("div", "victory-divider anim-stagger-3");
+  sec.appendChild(divider);
+
+  // Challenge badge
   if (game.challenge) {
-    const chBadge = el("div", "victory-challenge");
-    chBadge.textContent = `Challenge completed: ${game.challenge.name}`;
+    const chBadge = el("div", "victory-challenge anim-stagger-4");
+    chBadge.innerHTML = `<span class="victory-challenge-label">Challenge conquered</span><span class="victory-challenge-name">${game.challenge.name}</span>`;
     sec.appendChild(chBadge);
   }
 
-  const stats = el("div", "victory-stats");
-  stats.innerHTML = [
-    `Floor reached: ${game.level}`,
-    `Enemies defeated: ${game.kills}`,
-    `Deck size: ${game.deck.length}`,
-    `Relics: ${game.relics.length}`,
-    `Gold: ${game.gold}`,
-  ].join("<br>");
-  sec.appendChild(stats);
+  // Animated stats
+  const statsData = [
+    { label: "Floors conquered", value: game.level },
+    { label: "Legends defeated", value: game.kills },
+    { label: "Deck forged", value: game.deck.length + " cards" },
+    { label: "Relics claimed", value: game.relics.length },
+    { label: "Gold amassed", value: game.gold },
+  ];
+  const statsGrid = el("div", "victory-stats-grid");
+  statsData.forEach((s, i) => {
+    const item = el("div", `victory-stat-item anim-stagger-${4 + i}`);
+    const val = el("div", "victory-stat-value");
+    val.textContent = s.value;
+    const lbl = el("div", "victory-stat-label");
+    lbl.textContent = s.label;
+    item.appendChild(val);
+    item.appendChild(lbl);
+    statsGrid.appendChild(item);
+  });
+  sec.appendChild(statsGrid);
 
+  // Points earned
+  const pts = game.level * 3 + game.kills + (game.level >= 5 ? 10 : 0) + (game.level >= 10 ? 20 : 0) + (game.level >= 15 ? 30 : 0) + 100;
+  const pointsEl = el("div", "victory-points anim-stagger-9");
+  pointsEl.innerHTML = `<span class="victory-points-num">+${pts}</span> legacy points earned`;
+  sec.appendChild(pointsEl);
+
+  // Challenge progress
   const completed = CHALLENGES.filter(c => meta.isChallengeComplete(c.id)).length;
-  const progress = el("div", "victory-progress");
-  progress.textContent = `Challenges: ${completed}/${CHALLENGES.length}`;
-  sec.appendChild(progress);
+  if (meta.firstClear) {
+    const progress = el("div", "victory-progress anim-stagger-10");
+    const bar = el("div", "victory-progress-bar");
+    const fill = el("div", "victory-progress-fill");
+    fill.style.width = Math.round(completed / CHALLENGES.length * 100) + "%";
+    bar.appendChild(fill);
+    progress.appendChild(bar);
+    const txt = el("div", "victory-progress-text");
+    txt.textContent = `${completed} / ${CHALLENGES.length} challenges`;
+    progress.appendChild(txt);
+    sec.appendChild(progress);
+  }
 
-  const hint = el("div", "victory-hint");
-  hint.textContent = "R = new run    L = legacy (upgrades)";
+  // Hint
+  const hint = el("div", "victory-hint anim-stagger-11");
+  hint.textContent = "R = new run \u00a0\u00a0 L = legacy";
   sec.appendChild(hint);
 
   main.appendChild(sec);
@@ -721,41 +773,109 @@ function renderVictory(main) {
 }
 
 function renderFinalVictory(main) {
-  const sec = el("div", "final-victory-section");
+  const sec = el("div", "fv-section");
 
-  const title = el("div", "final-victory-title");
-  title.textContent = "LEGENDS CONQUERED";
+  // Particle storm (more particles, golden)
+  const particles = el("div", "fv-particles");
+  for (let i = 0; i < 50; i++) {
+    const p = el("div", "fv-particle");
+    p.style.left = Math.random() * 100 + "%";
+    p.style.animationDelay = Math.random() * 5 + "s";
+    p.style.animationDuration = (4 + Math.random() * 5) + "s";
+    particles.appendChild(p);
+  }
+  sec.appendChild(particles);
+
+  // Aurora light
+  const aurora = el("div", "fv-aurora");
+  sec.appendChild(aurora);
+
+  // Crown / emblem
+  const crown = el("div", "fv-crown anim-stagger-1");
+  crown.innerHTML = "\u2726 \u2726 \u2726";
+  sec.appendChild(crown);
+
+  // Title
+  const title = el("div", "fv-title anim-stagger-2");
+  title.textContent = "TOUTES LES L\u00c9GENDES CONQUISES";
   sec.appendChild(title);
 
-  const sub = el("div", "final-victory-sub");
-  sub.textContent = "All challenges have been completed. Every legend of France has been mastered.";
+  const sub = el("div", "fv-subtitle anim-stagger-3");
+  sub.textContent = "Every shadow has been lifted. Every legend, mastered. France remembers your name.";
   sec.appendChild(sub);
 
-  // Placeholder for future animation
-  const placeholder = el("div", "final-victory-placeholder");
-  placeholder.textContent = "[ Victory Animation Placeholder ]";
-  sec.appendChild(placeholder);
+  // Legendary tapestry: creatures appearing in procession
+  const LEGENDS = [
+    { name: "Loup-Garou", region: "Bretagne", symbol: "\ud83d\udc3a" },
+    { name: "Tarasque", region: "Provence", symbol: "\ud83d\udc09" },
+    { name: "Ankou", region: "Bretagne", symbol: "\u2620" },
+    { name: "M\u00e9lusine", region: "Val de Loire", symbol: "\ud83d\udc0d" },
+    { name: "Gargantua", region: "Val de Loire", symbol: "\ud83d\uddfb" },
+    { name: "La Vouivre", region: "Alpes", symbol: "\ud83d\udc8e" },
+    { name: "Le Diable de Laval", region: "Auvergne", symbol: "\ud83d\udd25" },
+    { name: "F\u00e9e Morgane", region: "Bretagne", symbol: "\u2728" },
+    { name: "Grand Veneur", region: "Normandie", symbol: "\ud83c\udff9" },
+    { name: "Roi des Aulnes", region: "Alsace", symbol: "\ud83c\udf43" },
+    { name: "Gargouille", region: "Normandie", symbol: "\ud83c\udfdb" },
+    { name: "L'Ombre Souveraine", region: "", symbol: "\ud83d\udc51" },
+  ];
+  const tapestry = el("div", "fv-tapestry");
+  LEGENDS.forEach((leg, i) => {
+    const fig = el("div", `fv-legend anim-stagger-${4 + Math.floor(i / 2)}`);
+    const sym = el("div", "fv-legend-symbol");
+    sym.textContent = leg.symbol;
+    fig.appendChild(sym);
+    const nm = el("div", "fv-legend-name");
+    nm.textContent = leg.name;
+    fig.appendChild(nm);
+    if (leg.region) {
+      const rg = el("div", "fv-legend-region");
+      rg.textContent = leg.region;
+      fig.appendChild(rg);
+    }
+    tapestry.appendChild(fig);
+  });
+  sec.appendChild(tapestry);
 
-  // Show all completed challenges
-  const list = el("div", "final-victory-list");
-  for (const ch of CHALLENGES) {
-    const row = el("div", "final-victory-challenge");
-    row.textContent = `\u2713 ${ch.name}`;
-    list.appendChild(row);
-  }
-  sec.appendChild(list);
+  // Divider
+  const divider = el("div", "fv-divider anim-stagger-10");
+  sec.appendChild(divider);
 
-  const totalStats = el("div", "final-victory-stats");
-  totalStats.innerHTML = [
-    `Total runs: ${meta.totalRuns}`,
-    `Total kills: ${meta.totalKills}`,
-    `Best floor: ${meta.bestFloor}`,
-    `Legacy points: ${meta.legacyPoints}`,
-  ].join("<br>");
-  sec.appendChild(totalStats);
+  // All challenges
+  const chTitle = el("div", "fv-ch-title anim-stagger-10");
+  chTitle.textContent = `${CHALLENGES.length} challenges mastered`;
+  sec.appendChild(chTitle);
 
-  const hint = el("div", "final-victory-hint");
-  hint.textContent = "Congratulations, legend. R = new run    L = legacy";
+  const chList = el("div", "fv-ch-list");
+  CHALLENGES.forEach((ch, i) => {
+    const item = el("div", `fv-ch-item anim-stagger-${10 + Math.floor(i / 3)}`);
+    item.textContent = `\u2713 ${ch.name}`;
+    chList.appendChild(item);
+  });
+  sec.appendChild(chList);
+
+  // Lifetime stats
+  const statsGrid = el("div", "fv-stats anim-stagger-14");
+  const statPairs = [
+    ["Runs", meta.totalRuns], ["Legends slain", meta.totalKills],
+    ["Highest floor", meta.bestFloor], ["Legacy", meta.legacyPoints],
+  ];
+  statPairs.forEach(([lbl, val]) => {
+    const item = el("div", "fv-stat");
+    const v = el("div", "fv-stat-value"); v.textContent = val;
+    const l = el("div", "fv-stat-label"); l.textContent = lbl;
+    item.appendChild(v); item.appendChild(l);
+    statsGrid.appendChild(item);
+  });
+  sec.appendChild(statsGrid);
+
+  // Closing lore
+  const closing = el("div", "fv-closing anim-stagger-15");
+  closing.innerHTML = "&laquo; Il \u00e9tait une fois, et pour toujours. &raquo;<br><span class='fv-closing-en'>Once upon a time, and forevermore.</span>";
+  sec.appendChild(closing);
+
+  const hint = el("div", "fv-hint anim-stagger-16");
+  hint.textContent = "R = new run \u00a0\u00a0 L = legacy";
   sec.appendChild(hint);
 
   main.appendChild(sec);
