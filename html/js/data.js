@@ -112,6 +112,33 @@ function makeCardDB() {
 
 const CARD_DB = makeCardDB();
 
+// ===================== CHALLENGES =====================
+const CHALLENGES = [
+  { id: "no_potion", name: "No Potion", desc: "Complete the game without using or acquiring potions." },
+  { id: "no_healing", name: "No Healing", desc: "All healing effects are disabled. Legacy healing is suspended." },
+  { id: "deck_limit_15", name: "Lean Deck", desc: "Your deck cannot exceed 15 cards." },
+];
+
+// Region challenges — one per region
+for (const [region, cards] of Object.entries(REGIONS)) {
+  const id = "region_" + region.toLowerCase().replace(/ /g, "_");
+  CHALLENGES.push({
+    id,
+    name: `${region} Only`,
+    desc: `Only acquire cards from ${region}.`,
+    region,
+    regionCards: cards
+  });
+}
+
+const FINAL_BOSS_TEMPLATE = {
+  name: "L'Ombre Souveraine",
+  lore: "The shadow beneath all legends \u2014 when every tale is told, the Sovereign Shadow awakens to claim the storyteller.",
+  special: "sovereign",
+  tier: 5,
+  block_chance: 0.30
+};
+
 const RELICS = [
   { name: "Burning Blood", desc: "Heal 8 HP after each combat.", effect: "heal_after_combat", value: 8 },
   { name: "Orichalcum", desc: "Gain 6 block if you end turn with 0 block.", effect: "end_turn_block", value: 6 },

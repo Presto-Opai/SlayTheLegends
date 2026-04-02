@@ -1,5 +1,5 @@
 // ===================== UI =====================
-let game, meta, showingLegacy = false;
+let game, meta, showingLegacy = false, showingChallengeSelect = false;
 
 function init() {
   meta = new MetaProgress();
@@ -31,7 +31,18 @@ function bindEvents() {
 
 function restart() {
   showingLegacy = false;
-  game = new Game(meta);
+  if (meta.firstClear) {
+    showingChallengeSelect = true;
+    redraw();
+  } else {
+    game = new Game(meta);
+    redraw();
+  }
+}
+
+function startRun(challenge) {
+  showingChallengeSelect = false;
+  game = new Game(meta, challenge);
   redraw();
 }
 
@@ -47,6 +58,7 @@ function confirmReset() {
   localStorage.removeItem("legendes_save");
   meta = new MetaProgress();
   showingLegacy = false;
+  showingChallengeSelect = false;
   pendingReset = false;
   game = new Game(meta);
   redraw();
@@ -87,14 +99,17 @@ function redraw() {
   main.innerHTML = "";
 
   if (pendingReset) { renderResetConfirm(main); return; }
+  if (showingChallengeSelect) { renderChallengeSelect(main); return; }
   if (showingLegacy) { renderLegacy(main); return; }
+  if (game.won) { renderVictory(main); return; }
   if (game.dead) { renderDeath(main); return; }
   if (game._scryCards) { renderScry(main); return; }
   if (game._showingRemoval) { renderRemoval(main); return; }
 
   // Enemy section
   const enemySec = el("div", "enemy-section");
-  const enemyLabel = (game.enemy.elite ? "ELITE " : "") + game.enemy.name + " HP";
+  const enemyPrefix = game.enemy.isFinalBoss ? "FINAL BOSS " : (game.enemy.elite ? "ELITE " : "");
+  const enemyLabel = enemyPrefix + game.enemy.name + " HP";
   enemySec.appendChild(makeBar(enemyLabel, game.enemy.hp, game.enemy.max_hp, "enemy-bar"));
   const enemyStats = el("div", "enemy-stats");
   enemyStats.textContent = `Block: ${game.enemy.block}  Vuln: ${game.enemy.vuln}  Weak: ${game.enemy.weak}`;
@@ -111,6 +126,7 @@ function redraw() {
       nightmare: "Nightmare (draw penalty)", pack_hunter: "Pack Hunter (+3 if unblocked)",
       petrify: "Petrifying Gaze", stone_skin: "Stone Skin (resists weak hits)",
       soul_drain: "Soul Drain (-2 max HP/turn)",
+      sovereign: "Sovereign (Life Drain, Enrage, Soul Crush, Shadow Hounds)",
     };
     const sp = el("div", "enemy-special");
     sp.textContent = `Ability: ${specials[game.enemy.special] || game.enemy.special}`;
@@ -174,7 +190,8 @@ function redraw() {
   pileInfo.appendChild(drawBtn);
   pileInfo.appendChild(document.createTextNode("  "));
   pileInfo.appendChild(discardBtn);
-  pileInfo.appendChild(document.createTextNode(`  Floor: ${game.level}  Gold: ${game.gold}`));
+  const floorText = game.level === 50 ? `  Floor: ${game.level} (FINAL)  Gold: ${game.gold}` : `  Floor: ${game.level}  Gold: ${game.gold}`;
+  pileInfo.appendChild(document.createTextNode(floorText));
   playerSec.appendChild(pileInfo);
   main.appendChild(playerSec);
 
@@ -257,9 +274,20 @@ function updateSidebar() {
   const relDiv = document.getElementById("relic-list");
   relDiv.textContent = game.relics.length > 0 ? "Relics: " + game.relics.map(r => r.name).join(", ") : "";
 
+  // Active challenge indicator
+  const challengeDiv = document.getElementById("challenge-indicator");
+  if (game.challenge) {
+    challengeDiv.textContent = `Challenge: ${game.challenge.name}`;
+    challengeDiv.style.display = "block";
+  } else {
+    challengeDiv.style.display = "none";
+  }
+
   // Meta stats
+  const completed = CHALLENGES.filter(c => meta.isChallengeComplete(c.id)).length;
   document.getElementById("meta-stats").textContent =
-    `Legacy: ${meta.legacyPoints}  Runs: ${meta.totalRuns}  Best: ${meta.bestFloor}`;
+    `Legacy: ${meta.legacyPoints}  Runs: ${meta.totalRuns}  Best: ${meta.bestFloor}` +
+    (meta.firstClear ? `  Challenges: ${completed}/${CHALLENGES.length}` : "");
 }
 
 // ===================== COMPONENTS =====================
@@ -558,8 +586,176 @@ function renderLegacy(main) {
   });
   sec.appendChild(grid);
 
+  // Challenge progress (only show after first clear)
+  if (meta.firstClear) {
+    const chTitle = el("div", "legacy-challenge-title");
+    const completed = CHALLENGES.filter(c => meta.isChallengeComplete(c.id)).length;
+    chTitle.textContent = `Challenges (${completed}/${CHALLENGES.length})`;
+    sec.appendChild(chTitle);
+
+    const chGrid = el("div", "legacy-challenge-grid");
+    for (const ch of CHALLENGES) {
+      const done = meta.isChallengeComplete(ch.id);
+      const item = el("div", `legacy-challenge-item${done ? " legacy-challenge-done" : ""}`);
+      item.textContent = (done ? "\u2713 " : "\u2022 ") + ch.name;
+      item.title = ch.desc;
+      chGrid.appendChild(item);
+    }
+    sec.appendChild(chGrid);
+  }
+
   const hint = el("div", "legacy-hint");
   hint.textContent = "Click to buy — L to close";
+  sec.appendChild(hint);
+
+  main.appendChild(sec);
+  updateSidebar();
+}
+
+// ===================== CHALLENGE SELECT =====================
+function renderChallengeSelect(main) {
+  const sec = el("div", "challenge-select-section");
+  const title = el("div", "challenge-select-title");
+  title.textContent = "CHOOSE A CHALLENGE";
+  sec.appendChild(title);
+
+  const sub = el("div", "challenge-select-sub");
+  const completed = CHALLENGES.filter(c => meta.isChallengeComplete(c.id)).length;
+  sub.textContent = `Defeat L'Ombre Souveraine on Floor 50 to complete each challenge. (${completed}/${CHALLENGES.length} completed)`;
+  sec.appendChild(sub);
+
+  const grid = el("div", "challenge-grid");
+
+  // No Challenge option
+  const freeCard = el("div", "challenge-card challenge-free");
+  const freeName = el("div", "challenge-card-name");
+  freeName.textContent = "No Challenge";
+  freeCard.appendChild(freeName);
+  const freeDesc = el("div", "challenge-card-desc");
+  freeDesc.textContent = "Play a normal run to Floor 50.";
+  freeCard.appendChild(freeDesc);
+  freeCard.addEventListener("click", () => startRun(null));
+  grid.appendChild(freeCard);
+
+  for (const ch of CHALLENGES) {
+    const done = meta.isChallengeComplete(ch.id);
+    const card = el("div", `challenge-card${done ? " challenge-done" : ""}`);
+
+    const name = el("div", "challenge-card-name");
+    name.textContent = (done ? "\u2713 " : "") + ch.name;
+    card.appendChild(name);
+
+    const desc = el("div", "challenge-card-desc");
+    desc.textContent = ch.desc;
+    card.appendChild(desc);
+
+    // Show region card list for region challenges
+    if (ch.regionCards) {
+      const cardList = el("div", "challenge-card-list");
+      ch.regionCards.forEach(cardName => {
+        const cdb = CARD_DB[cardName];
+        if (!cdb) return;
+        const row = el("div", "challenge-card-list-item");
+        const rarity = cdb.rarity || "common";
+        row.classList.add(`pile-rarity-${rarity}`);
+        row.textContent = `${cardName} (${cdb.type}, ${cdb.cost})`;
+        row.title = cdb.text;
+        cardList.appendChild(row);
+      });
+      card.appendChild(cardList);
+    }
+
+    card.addEventListener("click", () => startRun(ch));
+    grid.appendChild(card);
+  }
+
+  sec.appendChild(grid);
+  main.appendChild(sec);
+  updateSidebar();
+}
+
+// ===================== VICTORY SCREEN =====================
+function renderVictory(main) {
+  // Check if all challenges are complete
+  if (meta.allChallengesComplete()) {
+    renderFinalVictory(main);
+    return;
+  }
+
+  const sec = el("div", "victory-section");
+  const title = el("div", "victory-title");
+  title.textContent = "VICTORY";
+  sec.appendChild(title);
+
+  const bossName = el("div", "victory-boss");
+  bossName.textContent = "L'Ombre Souveraine has been vanquished!";
+  sec.appendChild(bossName);
+
+  if (game.challenge) {
+    const chBadge = el("div", "victory-challenge");
+    chBadge.textContent = `Challenge completed: ${game.challenge.name}`;
+    sec.appendChild(chBadge);
+  }
+
+  const stats = el("div", "victory-stats");
+  stats.innerHTML = [
+    `Floor reached: ${game.level}`,
+    `Enemies defeated: ${game.kills}`,
+    `Deck size: ${game.deck.length}`,
+    `Relics: ${game.relics.length}`,
+    `Gold: ${game.gold}`,
+  ].join("<br>");
+  sec.appendChild(stats);
+
+  const completed = CHALLENGES.filter(c => meta.isChallengeComplete(c.id)).length;
+  const progress = el("div", "victory-progress");
+  progress.textContent = `Challenges: ${completed}/${CHALLENGES.length}`;
+  sec.appendChild(progress);
+
+  const hint = el("div", "victory-hint");
+  hint.textContent = "R = new run    L = legacy (upgrades)";
+  sec.appendChild(hint);
+
+  main.appendChild(sec);
+  updateSidebar();
+}
+
+function renderFinalVictory(main) {
+  const sec = el("div", "final-victory-section");
+
+  const title = el("div", "final-victory-title");
+  title.textContent = "LEGENDS CONQUERED";
+  sec.appendChild(title);
+
+  const sub = el("div", "final-victory-sub");
+  sub.textContent = "All challenges have been completed. Every legend of France has been mastered.";
+  sec.appendChild(sub);
+
+  // Placeholder for future animation
+  const placeholder = el("div", "final-victory-placeholder");
+  placeholder.textContent = "[ Victory Animation Placeholder ]";
+  sec.appendChild(placeholder);
+
+  // Show all completed challenges
+  const list = el("div", "final-victory-list");
+  for (const ch of CHALLENGES) {
+    const row = el("div", "final-victory-challenge");
+    row.textContent = `\u2713 ${ch.name}`;
+    list.appendChild(row);
+  }
+  sec.appendChild(list);
+
+  const totalStats = el("div", "final-victory-stats");
+  totalStats.innerHTML = [
+    `Total runs: ${meta.totalRuns}`,
+    `Total kills: ${meta.totalKills}`,
+    `Best floor: ${meta.bestFloor}`,
+    `Legacy points: ${meta.legacyPoints}`,
+  ].join("<br>");
+  sec.appendChild(totalStats);
+
+  const hint = el("div", "final-victory-hint");
+  hint.textContent = "Congratulations, legend. R = new run    L = legacy";
   sec.appendChild(hint);
 
   main.appendChild(sec);

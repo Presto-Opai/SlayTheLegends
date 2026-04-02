@@ -358,3 +358,118 @@ button { cursor: pointer; font-family: inherit; }
   border-radius: 6px;
 }
 .pile-close-btn:hover { background: #484f58; }
+
+/* ===================== CHALLENGE SELECT ===================== */
+.challenge-select-section { padding: 20px; }
+.challenge-select-title {
+  font-size: 24px; font-weight: bold; color: #ffd68a;
+  text-align: center; margin-bottom: 6px;
+}
+.challenge-select-sub {
+  font-size: 12px; color: #9cc1ff; text-align: center; margin-bottom: 20px;
+}
+.challenge-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px; max-width: 900px; margin: 0 auto;
+}
+.challenge-card {
+  padding: 12px; border-radius: 6px; cursor: pointer;
+  background: #1a1a2a; border: 2px solid #4a5a8a;
+  transition: transform 0.15s, border-color 0.15s;
+}
+.challenge-card:hover { transform: translateY(-3px); border-color: #8ab8ff; }
+.challenge-card.challenge-done {
+  background: #1a2a1a; border-color: #4adc8f;
+}
+.challenge-card.challenge-free {
+  background: #1b2533; border-color: #5a7a9a;
+}
+.challenge-card-name {
+  font-size: 13px; font-weight: bold; color: #e6f0ff; margin-bottom: 4px;
+}
+.challenge-done .challenge-card-name { color: #4adc8f; }
+.challenge-card-desc { font-size: 11px; color: #9cc1ff; margin-bottom: 6px; }
+.challenge-card-list { max-height: 90px; overflow-y: auto; }
+.challenge-card-list-item {
+  font-size: 10px; padding: 1px 4px; border-radius: 2px;
+}
+.challenge-card-list-item:hover { background: #21262d; }
+
+/* ===================== CHALLENGE INDICATOR ===================== */
+#challenge-indicator {
+  font-size: 11px; font-weight: bold; color: #ffd68a;
+  padding: 4px 8px; background: #2a1f10; border: 1px solid #ff9e44;
+  border-radius: 4px; text-align: center;
+}
+
+/* ===================== VICTORY SCREEN ===================== */
+.victory-section {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 60vh; text-align: center;
+}
+.victory-title {
+  font-size: 36px; font-weight: bold; color: #ffd68a; margin-bottom: 12px;
+  text-shadow: 0 0 20px rgba(255, 214, 138, 0.4);
+}
+.victory-boss { font-size: 16px; color: #e6f0ff; margin-bottom: 16px; }
+.victory-challenge {
+  font-size: 14px; font-weight: bold; color: #4adc8f;
+  padding: 6px 16px; background: #1a2a1a; border: 1px solid #4adc8f;
+  border-radius: 4px; margin-bottom: 16px;
+}
+.victory-stats { font-size: 13px; color: #cfe0ff; line-height: 1.6; margin-bottom: 12px; }
+.victory-progress { font-size: 12px; color: #9cc1ff; margin-bottom: 16px; }
+.victory-hint { font-size: 13px; color: #9cc1ff; }
+
+/* ===================== FINAL VICTORY ===================== */
+.final-victory-section {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 70vh; text-align: center;
+}
+.final-victory-title {
+  font-size: 42px; font-weight: bold; color: #ffd68a; margin-bottom: 8px;
+  text-shadow: 0 0 30px rgba(255, 214, 138, 0.5);
+}
+.final-victory-sub {
+  font-size: 16px; color: #e6f0ff; margin-bottom: 20px; max-width: 500px;
+}
+.final-victory-placeholder {
+  width: 400px; height: 200px; margin: 20px auto;
+  border: 2px dashed #5a7a9a; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  color: #5a7a9a; font-size: 14px;
+}
+.final-victory-list {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  max-width: 600px; margin: 16px auto;
+}
+.final-victory-challenge {
+  font-size: 11px; color: #4adc8f; padding: 4px 10px;
+  background: #1a2a1a; border: 1px solid #4adc8f; border-radius: 4px;
+}
+.final-victory-stats {
+  font-size: 13px; color: #cfe0ff; line-height: 1.6; margin-top: 16px;
+}
+.final-victory-hint { font-size: 13px; color: #9cc1ff; margin-top: 16px; }
+
+/* ===================== LEGACY CHALLENGES ===================== */
+.legacy-challenge-title {
+  font-size: 14px; font-weight: bold; color: #ffd68a;
+  text-align: center; margin-top: 20px; margin-bottom: 8px;
+}
+.legacy-challenge-grid {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  max-width: 700px; margin: 0 auto 12px;
+}
+.legacy-challenge-item {
+  font-size: 11px; color: #5a7a9a; padding: 3px 8px;
+  background: #111; border: 1px solid #333; border-radius: 3px;
+}
+.legacy-challenge-done {
+  color: #4adc8f; background: #1a2a1a; border-color: #4adc8f;
+}
+
+@media (max-width: 768px) {
+  .challenge-grid { grid-template-columns: 1fr; }
+  .final-victory-placeholder { width: 280px; height: 140px; }
+}

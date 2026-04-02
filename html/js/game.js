@@ -6,6 +6,8 @@ class MetaProgress {
     this.bestFloor = 0;
     this.totalKills = 0;
     this.upgrades = {};
+    this.firstClear = false;
+    this.challengesCompleted = {};
     this.load();
   }
 
@@ -19,6 +21,8 @@ class MetaProgress {
       this.bestFloor = data.bestFloor || 0;
       this.totalKills = data.totalKills || 0;
       this.upgrades = data.upgrades || {};
+      this.firstClear = data.firstClear || false;
+      this.challengesCompleted = data.challengesCompleted || {};
     } catch (e) { /* ignore */ }
   }
 
@@ -29,6 +33,8 @@ class MetaProgress {
       bestFloor: this.bestFloor,
       totalKills: this.totalKills,
       upgrades: this.upgrades,
+      firstClear: this.firstClear,
+      challengesCompleted: this.challengesCompleted,
     }));
   }
 
@@ -53,7 +59,25 @@ class MetaProgress {
     return true;
   }
 
-  recordRun(floor, kills) {
+  setFirstClear() {
+    this.firstClear = true;
+    this.save();
+  }
+
+  completeChallenge(id) {
+    this.challengesCompleted[id] = true;
+    this.save();
+  }
+
+  isChallengeComplete(id) {
+    return !!this.challengesCompleted[id];
+  }
+
+  allChallengesComplete() {
+    return CHALLENGES.every(c => this.challengesCompleted[c.id]);
+  }
+
+  recordRun(floor, kills, victory = false) {
     this.totalRuns++;
     this.totalKills += kills;
     if (floor > this.bestFloor) this.bestFloor = floor;
@@ -61,6 +85,7 @@ class MetaProgress {
     if (floor >= 5) points += 10;
     if (floor >= 10) points += 20;
     if (floor >= 15) points += 30;
+    if (victory) points += 100;
     this.legacyPoints += points;
     this.save();
     return points;
@@ -69,10 +94,13 @@ class MetaProgress {
 
 // ===================== GAME =====================
 class Game {
-  constructor(meta) {
+  constructor(meta, challenge = null) {
     this.meta = meta || new MetaProgress();
+    this.challenge = challenge;
     this.level = 0;
     this.kills = 0;
+    this.won = false;
+    this.strongestEnemy = { max_hp: 0, atk_min: 0, atk_max: 0 };
 
     const bonusHp = this.meta.rank("max_hp") * 5;
     const baseHp = 65 + bonusHp;
@@ -111,9 +139,14 @@ class Game {
     this.revealedIntents = [];
     this.dead = false;
 
-    // Starting potion from meta
-    if (this.meta.rank("start_potion") > 0) {
+    // Starting potion from meta (suppressed by No Potion challenge)
+    if (this.meta.rank("start_potion") > 0 && !(this.challenge && this.challenge.id === "no_potion")) {
       this.potions.push({ ...POTIONS[Math.floor(Math.random() * POTIONS.length)] });
+    }
+
+    // No Healing challenge: suppress all heal-on-win bonuses
+    if (this.challenge && this.challenge.id === "no_healing") {
+      this.healOnWinBonus = 0;
     }
 
     // Starting deck
@@ -183,7 +216,10 @@ class Game {
     }
   }
 
-  heal(n) { this.player.hp += n; this.clamp(); }
+  heal(n) {
+    if (this.challenge && this.challenge.id === "no_healing") return;
+    this.player.hp += n; this.clamp();
+  }
 
   draw(n) {
     for (let i = 0; i < n; i++) {
@@ -226,6 +262,7 @@ class Game {
   }
 
   usePotion(idx) {
+    if (this.challenge && this.challenge.id === "no_potion") { this.log = "Potions are forbidden in this challenge!"; return; }
     if (idx < 0 || idx >= this.potions.length || this.inReward) return;
     const p = this.potions.splice(idx, 1)[0];
     // Scale numeric potion values with floor (10% per floor)
@@ -306,6 +343,12 @@ class Game {
 
   // ---- Turn Flow ----
   nextEnemy() {
+    // Floor 50: spawn the final boss
+    if (this.level === 50) {
+      this._spawnFinalBoss();
+      return;
+    }
+
     let tier = 1;
     if (this.level >= 3) tier = 2;
     if (this.level >= 6) tier = 3;
@@ -347,6 +390,23 @@ class Game {
       hp: template.max_hp, block: 0, vuln: 0, weak: 0, enrage_stacks: 0,
       lore: template.lore || null, elite: isElite
     };
+
+    // Track strongest enemy for final boss scaling
+    if (template.max_hp > this.strongestEnemy.max_hp) this.strongestEnemy.max_hp = template.max_hp;
+    if (template.atk_min > this.strongestEnemy.atk_min) this.strongestEnemy.atk_min = template.atk_min;
+    if (template.atk_max > this.strongestEnemy.atk_max) this.strongestEnemy.atk_max = template.atk_max;
+
+    this._resetCombatState();
+
+    if (this.hasRelic("Bag of Marbles")) this.enemy.vuln += 1;
+
+    this.inReward = false;
+    this.startPlayerTurn();
+    this.pickEnemyIntent();
+    this.log = isElite ? `An ELITE ${this.enemy.name} appears!` : `A ${this.enemy.name} appears!`;
+  }
+
+  _resetCombatState() {
     this.damageTakenThisCombat = 0;
     this.drawPenalty = 0;
     this.player.song_block = 0;
@@ -361,13 +421,35 @@ class Game {
     this.turnNumber = 0;
     this.revealedIntents = [];
     this.rampageBonus = {};
+  }
+
+  _spawnFinalBoss() {
+    const s = this.strongestEnemy;
+    const hp = Math.max(s.max_hp * 2, 200);
+    const atkMin = Math.max(s.atk_min * 2, 20);
+    const atkMax = Math.max(s.atk_max * 2, 30);
+
+    this.enemy = {
+      name: FINAL_BOSS_TEMPLATE.name,
+      max_hp: hp, hp: hp,
+      atk_min: atkMin, atk_max: atkMax,
+      block: 0, vuln: 0, weak: 0,
+      block_chance: FINAL_BOSS_TEMPLATE.block_chance,
+      special: FINAL_BOSS_TEMPLATE.special,
+      tier: FINAL_BOSS_TEMPLATE.tier,
+      elite: false, enrage_stacks: 0,
+      lore: FINAL_BOSS_TEMPLATE.lore,
+      isFinalBoss: true
+    };
+
+    this._resetCombatState();
 
     if (this.hasRelic("Bag of Marbles")) this.enemy.vuln += 1;
 
     this.inReward = false;
     this.startPlayerTurn();
     this.pickEnemyIntent();
-    this.log = isElite ? `An ELITE ${this.enemy.name} appears!` : `A ${this.enemy.name} appears!`;
+    this.log = "L'OMBRE SOUVERAINE awakens! The final legend awaits!";
   }
 
   startPlayerTurn() {
@@ -423,7 +505,13 @@ class Game {
     } else {
       const val = this.randInt(this.enemy.atk_min, this.enemy.atk_max);
       const special = this.enemy.special;
-      if (special === "multi_hit") {
+      if (special === "sovereign") {
+        if (Math.random() < 0.3) {
+          this.enemyIntent = { type: "attack", value: Math.floor(val * 0.6), hits: 3 };
+        } else {
+          this.enemyIntent = { type: "attack", value: val, hits: 1 };
+        }
+      } else if (special === "multi_hit") {
         this.enemyIntent = { type: "attack", value: Math.floor(val / 2), hits: 2 };
       } else if (special === "crush" && Math.random() < 0.3) {
         this.enemyIntent = { type: "attack", value: Math.floor(val * 1.5), hits: 1 };
@@ -463,6 +551,9 @@ class Game {
         total += actual;
         if (special === "life_drain") {
           this.enemy.hp = Math.min(this.enemy.max_hp, this.enemy.hp + Math.floor(actual / 2));
+        }
+        if (special === "sovereign") {
+          this.enemy.hp = Math.min(this.enemy.max_hp, this.enemy.hp + Math.floor(actual / 3));
         }
         if (actual > 0 && this.player.flameBarrier > 0) {
           this.enemy.hp -= this.player.flameBarrier;
@@ -541,6 +632,27 @@ class Game {
       this.player.max_hp = Math.max(10, this.player.max_hp - 2);
       if (this.player.hp > this.player.max_hp) this.player.hp = this.player.max_hp;
       this.log += " Soul drained! Max HP -2.";
+    }
+    if (special === "sovereign") {
+      // Enrage: +2 per turn
+      this.enemy.enrage_stacks = (this.enemy.enrage_stacks || 0) + 2;
+      this.log += ` Shadow deepens! (+${this.enemy.enrage_stacks} dmg)`;
+      // Soul crush every 2 turns
+      if (this.turnNumber % 2 === 0) {
+        this.player.max_hp = Math.max(10, this.player.max_hp - 3);
+        if (this.player.hp > this.player.max_hp) this.player.hp = this.player.max_hp;
+        this.log += " Soul crushed! Max HP -3.";
+      }
+      // Shadow hounds every 3 turns
+      if (this.turnNumber % 3 === 0) {
+        const houndDmg = 6;
+        this.player.hp -= houndDmg;
+        this.clamp();
+        this.log += ` Shadow hounds strike for ${houndDmg}!`;
+      }
+      // Auto-block each turn (scaling)
+      const ab = 5 + this.turnNumber * 2;
+      this.enemy.block += ab;
     }
   }
 
@@ -705,6 +817,12 @@ class Game {
     this.player.block = 0;
     this.enemyIntent = { type: "none", value: 0 };
 
+    // Check if we just beat the final boss
+    if (this.enemy && this.enemy.isFinalBoss) {
+      this._winGame();
+      return;
+    }
+
     let healAmt = 6 + this.healOnWinBonus;
     if (this.hasRelic("Burning Blood")) healAmt += 8;
     if (this.hasRelic("Meat on Bone") && this.player.hp < this.player.max_hp * 0.5) healAmt += 12;
@@ -732,7 +850,7 @@ class Game {
       this._cardReward(goldGain);
     } else {
       const roll = Math.random();
-      if (roll < 0.15 && this.potions.length < this.maxPotions) {
+      if (roll < 0.15 && this.potions.length < this.maxPotions && !(this.challenge && this.challenge.id === "no_potion")) {
         this.rewardType = "potion";
         this.rewardChoices = this._sample(POTIONS, 3).map(p => ({ ...p }));
         this.log = `Victory! +${goldGain} gold. Choose a potion.`;
@@ -775,38 +893,56 @@ class Game {
 
   _cardReward(goldGain) {
     this.rewardType = "card";
-    const regionKeys = Object.keys(REGIONS);
-    const region = regionKeys[Math.floor(Math.random() * regionKeys.length)];
-    let pool = [...REGIONS[region]];
-    pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
-      "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
-      "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre",
-      "Botte de Nevers", "Enchaînement", "Rempart de Vauban", "Ruse de Renart");
-    if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
-    if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
+
+    let pool;
+    let regionLabel;
+
+    if (this.challenge && this.challenge.region) {
+      // Region-only challenge: only cards from that region
+      pool = [...this.challenge.regionCards];
+      regionLabel = this.challenge.region;
+    } else {
+      const regionKeys = Object.keys(REGIONS);
+      const region = regionKeys[Math.floor(Math.random() * regionKeys.length)];
+      pool = [...REGIONS[region]];
+      pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
+        "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
+        "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre",
+        "Botte de Nevers", "Enchaînement", "Rempart de Vauban", "Ruse de Renart");
+      if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
+      if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
+      regionLabel = region;
+    }
 
     // Remove scaling cards from main pool so we control their placement
     const scalingPool = this._isScalingFloor();
     if (scalingPool) {
+      // For region-only, only inject scaling cards that belong to this region
+      const effectiveScaling = (this.challenge && this.challenge.region)
+        ? scalingPool.filter(n => this.challenge.regionCards.includes(n))
+        : scalingPool;
       pool = pool.filter(n => !scalingPool.includes(n));
-    }
 
-    const unique = [...new Set(pool)];
-    const choices = this._sample(unique, scalingPool ? 2 : 3);
+      const unique = [...new Set(pool)];
+      const choices = this._sample(unique, effectiveScaling.length > 0 ? 2 : 3);
 
-    // Inject exactly 1 scaling card on scaling floors
-    if (scalingPool) {
-      const pick = scalingPool[Math.floor(Math.random() * scalingPool.length)];
-      choices.push(pick);
-      // Shuffle so it's not always last
-      for (let i = choices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [choices[i], choices[j]] = [choices[j], choices[i]];
+      if (effectiveScaling.length > 0) {
+        const pick = effectiveScaling[Math.floor(Math.random() * effectiveScaling.length)];
+        choices.push(pick);
+        for (let i = choices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [choices[i], choices[j]] = [choices[j], choices[i]];
+        }
       }
+
+      this.rewardChoices = choices.filter(n => CARD_DB[n]).map(n => ({ ...CARD_DB[n] }));
+    } else {
+      const unique = [...new Set(pool)];
+      const choices = this._sample(unique, 3);
+      this.rewardChoices = choices.filter(n => CARD_DB[n]).map(n => ({ ...CARD_DB[n] }));
     }
 
-    this.rewardChoices = choices.filter(n => CARD_DB[n]).map(n => ({ ...CARD_DB[n] }));
-    this.log = `Victory! +${goldGain} gold. Choose a card (${region}).`;
+    this.log = `Victory! +${goldGain} gold. Choose a card (${regionLabel}).`;
   }
 
   takeReward(i) {
@@ -814,6 +950,10 @@ class Game {
     if (i !== null && i >= 0 && i < this.rewardChoices.length) {
       const choice = this.rewardChoices[i];
       if (this.rewardType === "card") {
+        if (this.challenge && this.challenge.id === "deck_limit_15" && this.deck.length >= 15) {
+          this.log = "Deck is at maximum size (15 cards)!";
+          return;
+        }
         this.deck.push({ ...choice });
         this.log = `Added: ${choice.name}.`;
       } else if (this.rewardType === "relic") {
@@ -821,6 +961,10 @@ class Game {
         if (choice.effect === "strength") this.player.strength += choice.value;
         this.log = `Relic: ${choice.name} — ${choice.desc}`;
       } else if (this.rewardType === "potion") {
+        if (this.challenge && this.challenge.id === "no_potion") {
+          this.log = "Potions are forbidden in this challenge!";
+          return;
+        }
         if (this.potions.length < this.maxPotions) {
           this.potions.push({ ...choice });
           this.log = `Potion: ${choice.name}.`;
@@ -859,11 +1003,24 @@ class Game {
     this.shopItems = [];
 
     const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable"];
-    const allCards = Object.keys(CARD_DB);
-    const shopCardNames = this._sample(allCards.filter(n => !SCALING_CARDS.includes(n)), 4);
-    // Guarantee 1 scaling card in every shop
-    const scalingPick = SCALING_CARDS[Math.floor(Math.random() * SCALING_CARDS.length)];
-    shopCardNames.push(scalingPick);
+
+    let cardPool;
+    if (this.challenge && this.challenge.region) {
+      // Region-only: shop cards from that region only
+      cardPool = [...this.challenge.regionCards];
+    } else {
+      cardPool = Object.keys(CARD_DB);
+    }
+
+    const shopCardNames = this._sample(cardPool.filter(n => !SCALING_CARDS.includes(n)), 4);
+    // Guarantee 1 scaling card in every shop (region-filtered if needed)
+    const availableScaling = (this.challenge && this.challenge.region)
+      ? SCALING_CARDS.filter(n => this.challenge.regionCards.includes(n))
+      : SCALING_CARDS;
+    if (availableScaling.length > 0) {
+      const scalingPick = availableScaling[Math.floor(Math.random() * availableScaling.length)];
+      shopCardNames.push(scalingPick);
+    }
     this.shuffle(shopCardNames);
     for (const name of shopCardNames) {
       const card = CARD_DB[name];
@@ -873,8 +1030,10 @@ class Game {
       this.shopItems.push({ item: { ...card }, price, type: "card", sold: false });
     }
 
-    const pot = POTIONS[Math.floor(Math.random() * POTIONS.length)];
-    this.shopItems.push({ item: { ...pot }, price: this.randInt(20, 35), type: "potion", sold: false });
+    if (!(this.challenge && this.challenge.id === "no_potion")) {
+      const pot = POTIONS[Math.floor(Math.random() * POTIONS.length)];
+      this.shopItems.push({ item: { ...pot }, price: this.randInt(20, 35), type: "potion", sold: false });
+    }
 
     const availableRelics = RELICS.filter(r => !this.hasRelic(r.name));
     if (availableRelics.length > 0) {
@@ -900,6 +1059,10 @@ class Game {
     item.sold = true;
 
     if (item.type === "card") {
+      if (this.challenge && this.challenge.id === "deck_limit_15" && this.deck.length >= 15) {
+        this.gold += item.price; item.sold = false;
+        this.log = "Deck is at maximum size (15 cards)!"; return;
+      }
       this.deck.push({ ...item.item });
       this.log = `Bought: ${item.item.name} for ${item.price} gold.`;
     } else if (item.type === "potion") {
@@ -948,6 +1111,8 @@ class Game {
       gold: this.gold, handsize: this.handsize,
       maxPotions: this.maxPotions, healOnWinBonus: this.healOnWinBonus,
       attacksPlayed: this.attacksPlayed, rampageBonus: this.rampageBonus,
+      challenge: this.challenge ? this.challenge.id : null,
+      strongestEnemy: this.strongestEnemy,
       deck: cardNames(this.deck), drawPile: cardNames(this.drawPile),
       discard: cardNames(this.discard), hand: cardNames(this.hand),
       relics: this.relics.map(r => ({ name: r.name })),
@@ -958,6 +1123,8 @@ class Game {
         atk_min: this.enemy.atk_min, atk_max: this.enemy.atk_max,
         block_chance: this.enemy.block_chance, special: this.enemy.special,
         tier: this.enemy.tier || 1, enrage_stacks: this.enemy.enrage_stacks || 0,
+        isFinalBoss: this.enemy.isFinalBoss || false,
+        lore: this.enemy.lore || null,
       },
       enemyIntent: this.enemyIntent,
       turnNumber: this.turnNumber,
@@ -986,6 +1153,9 @@ class Game {
       g.healOnWinBonus = data.healOnWinBonus || 0;
       g.attacksPlayed = data.attacksPlayed || 0;
       g.rampageBonus = data.rampageBonus || {};
+      g.challenge = data.challenge ? (CHALLENGES.find(c => c.id === data.challenge) || null) : null;
+      g.strongestEnemy = data.strongestEnemy || { max_hp: 0, atk_min: 0, atk_max: 0 };
+      g.won = false;
       g.damageTakenThisCombat = 0;
       g.revealedIntents = [];
       g.turnNumber = data.turnNumber || 0;
@@ -1017,6 +1187,8 @@ class Game {
         atk_min: ed.atk_min, atk_max: ed.atk_max,
         block_chance: ed.block_chance, special: ed.special,
         tier: ed.tier || 1, enrage_stacks: ed.enrage_stacks || 0,
+        isFinalBoss: ed.isFinalBoss || false,
+        lore: ed.lore || null,
       };
       g.enemyIntent = data.enemyIntent || { type: "attack", value: 6 };
       return g;
@@ -1024,6 +1196,27 @@ class Game {
   }
 
   deleteRunSave() { localStorage.removeItem("legendes_save"); }
+
+  _winGame() {
+    this.won = true;
+    this.inReward = false;
+    this.inShop = false;
+
+    // Set firstClear on first victory
+    if (!this.meta.firstClear) {
+      this.meta.setFirstClear();
+    }
+
+    // Complete challenge if one was active
+    if (this.challenge) {
+      this.meta.completeChallenge(this.challenge.id);
+    }
+
+    // Award legacy points with victory bonus
+    const points = this.meta.recordRun(this.level, this.kills, true);
+    this.log = `VICTORY! The Sovereign Shadow is vanquished! +${points} legacy points!`;
+    this.deleteRunSave();
+  }
 
   loseGame() {
     this.dead = true;
