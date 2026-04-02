@@ -156,9 +156,11 @@ class Game {
     }
     if (this.enemy.vuln > 0 && source === "You") amount = Math.floor(amount * 1.5);
     amount = Math.max(0, amount);
-    // Stone Skin: attacks dealing 5 or less (before block) are reduced to 1
-    if (source === "You" && this.enemy.special === "stone_skin" && amount > 0 && amount <= 5) {
-      amount = 1;
+    // Stone Skin: attacks dealing low damage (before block) are reduced to 1
+    if (source === "You" && this.enemy.special === "stone_skin" && amount > 0) {
+      const lvl = this.level;
+      const threshold = Math.floor(5 * (lvl <= 40 ? 1.0 + 0.05 * lvl : 3.0 + 0.1 * (lvl - 40)));
+      if (amount <= threshold) amount = 1;
     }
     if (this.enemy.block > 0) {
       const absorb = Math.min(this.enemy.block, amount);
