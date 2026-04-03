@@ -898,8 +898,9 @@ class Game {
     let regionLabel;
 
     if (this.challenge && this.challenge.region) {
-      // Region-only challenge: only cards from that region
+      // Region-only challenge: cards from that region + basic neutrals for variety
       pool = [...this.challenge.regionCards];
+      pool.push("Lunge", "Focus", "Expose", "Hamper");
       regionLabel = this.challenge.region;
     } else {
       const regionKeys = Object.keys(REGIONS);
@@ -1006,8 +1007,9 @@ class Game {
 
     let cardPool;
     if (this.challenge && this.challenge.region) {
-      // Region-only: shop cards from that region only
-      cardPool = [...this.challenge.regionCards];
+      // Region-only: shop cards from that region + basic neutrals
+      cardPool = [...this.challenge.regionCards, "Lunge", "Focus", "Expose", "Hamper"];
+      cardPool = [...new Set(cardPool)];
     } else {
       cardPool = Object.keys(CARD_DB);
     }

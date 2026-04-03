@@ -41,7 +41,7 @@ function makeCardDB() {
   add("Rampage", 1, "Attack", "Deal 8 damage. +4 per play this combat.", "rampage", "uncommon");
   add("Offering", 0, "Skill", "Lose 6 HP. Gain 2 energy, draw 3. Exhaust a card from hand. Exhaust.", "offering", "rare");
   add("Shockwave", 2, "Skill", "Apply 3 Weak and 3 Vulnerable.", "shockwave", "rare");
-  add("Body Slam", 1, "Attack", "Deal damage equal to your Block.", "bodySlam", "uncommon");
+  add("Body Slam", 1, "Attack", "Deal damage equal to your Block (+ STR, etc.).", "bodySlam", "uncommon");
   add("Cleave", 1, "Attack", "Deal 9 damage.", "atk9");
   add("Gallic Resolve", 1, "Power", "+1 armor. Apply 1 Weak. Exhaust.", "gallicResolve", "uncommon");
 
@@ -97,7 +97,7 @@ function makeCardDB() {
 
   // Combo cards — stronger when trigger condition is met
   add("Botte de Nevers", 1, "Attack", "Deal 5 damage. Deal an extra 4 damage hit for each Skill played this turn.", "botteDeNevers", "uncommon");
-  add("Enchaînement", 0, "Attack", "Deal 3 damage. If you played 2+ Attacks this turn, deal 9 and draw 1.", "enchainement", "uncommon");
+  add("Enchaînement", 0, "Attack", "Deal 3 damage. If 3rd+ Attack this turn, deal 9 and draw 1.", "enchainement", "uncommon");
   add("Rempart de Vauban", 1, "Skill", "Gain 4 block. Gain 3 extra block for each Attack played this turn.", "rempartVauban", "uncommon");
   add("Ruse de Renart", 0, "Attack", "Deal 2 damage. If enemy intends to block, apply 1 Vulnerable then deal 8.", "ruseRenart", "uncommon");
 
