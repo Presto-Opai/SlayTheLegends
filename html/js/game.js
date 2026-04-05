@@ -271,7 +271,17 @@ class Game {
     switch (p.action) {
       case "damage": { const v = sv(p.value); this.dealDamage(v, "You"); this.log = `Used ${p.name}: ${v} damage!`; break; }
       case "block": { const v = sv(p.value); this.gainBlock(v); this.log = `Used ${p.name}: +${v} block!`; break; }
-      case "strength": { const v = Math.max(p.value, sv(p.value)); this.player.strength += v; this.log = `Used ${p.name}: +${v} STR!`; break; }
+      case "strength": {
+        const v = Math.max(p.value, sv(p.value));
+        this.player.strength += v;
+        // Track temporary potion STR so it can be removed between combats
+        // (permanent in region challenges that lack strength cards)
+        if (!this._regionLacksStrengthCards()) {
+          this.player.potionStr = (this.player.potionStr || 0) + v;
+        }
+        this.log = `Used ${p.name}: +${v} STR!`;
+        break;
+      }
       case "draw": { this.draw(p.value); this.log = `Used ${p.name}: drew ${p.value}!`; break; }
       case "vuln": { const v = Math.max(p.value, sv(p.value)); this.applyVuln(v); this.log = `Used ${p.name}: ${v} Vulnerable!`; break; }
       case "weak": { const v = Math.max(p.value, sv(p.value)); this.applyWeak(v); this.log = `Used ${p.name}: ${v} Weak!`; break; }
@@ -411,8 +421,10 @@ class Game {
     this.drawPenalty = 0;
     this.player.song_block = 0;
     this.player.strength -= (this.player.demonFormStr || 0);
+    this.player.strength -= (this.player.potionStr || 0);
     this.player.demonForm = 0;
     this.player.demonFormStr = 0;
+    this.player.potionStr = 0;
     this.player.juggernaut = 0;
     this.player.flameBarrier = 0;
     this.player.vuln = 0;
@@ -877,6 +889,12 @@ class Game {
       result.push(copy.splice(idx, 1)[0]);
     }
     return result;
+  }
+
+  _regionLacksStrengthCards() {
+    if (!this.challenge || !this.challenge.region) return false;
+    const STR_CARDS = ["Rally", "Volcan's Breath", "Rage du Diable"];
+    return !this.challenge.regionCards.some(c => STR_CARDS.includes(c));
   }
 
   _isScalingFloor() {
