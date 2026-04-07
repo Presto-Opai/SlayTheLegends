@@ -1,3 +1,6 @@
+// Neutral cards always available in region-only challenges
+const CHALLENGE_NEUTRAL_CARDS = ["Defend", "Cleave", "Gallic Resolve", "Adrenaline Rush"];
+
 // ===================== META PROGRESS =====================
 class MetaProgress {
   constructor() {
@@ -916,8 +919,8 @@ class Game {
     let regionLabel;
 
     if (this.challenge && this.challenge.region) {
-      // Region-only challenge: only cards from that region
-      pool = [...this.challenge.regionCards];
+      // Region-only challenge: only cards from that region (+ a few staple neutrals)
+      pool = [...this.challenge.regionCards, ...CHALLENGE_NEUTRAL_CARDS];
       regionLabel = this.challenge.region;
     } else {
       const regionKeys = Object.keys(REGIONS);
@@ -936,8 +939,9 @@ class Game {
     const scalingPool = this._isScalingFloor();
     if (scalingPool) {
       // For region-only, only inject scaling cards that belong to this region
+      // (or are part of the always-available neutral pool)
       const effectiveScaling = (this.challenge && this.challenge.region)
-        ? scalingPool.filter(n => this.challenge.regionCards.includes(n))
+        ? scalingPool.filter(n => this.challenge.regionCards.includes(n) || CHALLENGE_NEUTRAL_CARDS.includes(n))
         : scalingPool;
       pool = pool.filter(n => !scalingPool.includes(n));
 
@@ -1024,8 +1028,8 @@ class Game {
 
     let cardPool;
     if (this.challenge && this.challenge.region) {
-      // Region-only: shop cards from that region only
-      cardPool = [...this.challenge.regionCards];
+      // Region-only: shop cards from that region (+ a few staple neutrals)
+      cardPool = [...this.challenge.regionCards, ...CHALLENGE_NEUTRAL_CARDS];
     } else {
       cardPool = Object.keys(CARD_DB);
     }
@@ -1033,7 +1037,7 @@ class Game {
     const shopCardNames = this._sample(cardPool.filter(n => !SCALING_CARDS.includes(n)), 4);
     // Guarantee 1 scaling card in every shop (region-filtered if needed)
     const availableScaling = (this.challenge && this.challenge.region)
-      ? SCALING_CARDS.filter(n => this.challenge.regionCards.includes(n))
+      ? SCALING_CARDS.filter(n => this.challenge.regionCards.includes(n) || CHALLENGE_NEUTRAL_CARDS.includes(n))
       : SCALING_CARDS;
     if (availableScaling.length > 0) {
       const scalingPick = availableScaling[Math.floor(Math.random() * availableScaling.length)];
