@@ -366,8 +366,19 @@ button { cursor: pointer; font-family: inherit; }
   text-align: center; margin-bottom: 6px;
 }
 .challenge-select-sub {
-  font-size: 12px; color: #9cc1ff; text-align: center; margin-bottom: 20px;
+  font-size: 12px; color: #9cc1ff; text-align: center; margin-bottom: 12px;
 }
+.challenge-select-option {
+  text-align: center; margin-bottom: 16px;
+}
+.challenge-select-option-label {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: #c8d8ff; cursor: pointer;
+  padding: 6px 10px; border-radius: 4px;
+  background: #1a1a2a; border: 1px solid #4a5a8a;
+}
+.challenge-select-option-label:hover { border-color: #8ab8ff; }
+.challenge-select-option-label input { cursor: pointer; }
 .challenge-grid {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
   gap: 10px; max-width: 900px; margin: 0 auto;

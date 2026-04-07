@@ -40,9 +40,9 @@ function restart() {
   }
 }
 
-function startRun(challenge) {
+function startRun(challenge, options = {}) {
   showingChallengeSelect = false;
-  game = new Game(meta, challenge);
+  game = new Game(meta, challenge, options);
   redraw();
 }
 
@@ -624,6 +624,20 @@ function renderChallengeSelect(main) {
   sub.textContent = `Defeat L'Ombre Souveraine on Floor 50 to complete each challenge. (${completed}/${CHALLENGES.length} completed)`;
   sec.appendChild(sub);
 
+  // Optional toggle: include staple neutral cards in region-only challenges
+  const optionRow = el("div", "challenge-select-option");
+  const optionLabel = document.createElement("label");
+  optionLabel.className = "challenge-select-option-label";
+  const optionCheckbox = document.createElement("input");
+  optionCheckbox.type = "checkbox";
+  optionCheckbox.id = "challenge-allow-neutrals";
+  optionLabel.appendChild(optionCheckbox);
+  const optionText = document.createElement("span");
+  optionText.textContent = " Include staple neutral cards in region challenges (Defend, Cleave, Gallic Resolve, Adrenaline Rush)";
+  optionLabel.appendChild(optionText);
+  optionRow.appendChild(optionLabel);
+  sec.appendChild(optionRow);
+
   const grid = el("div", "challenge-grid");
 
   // No Challenge option
@@ -665,7 +679,10 @@ function renderChallengeSelect(main) {
       card.appendChild(cardList);
     }
 
-    card.addEventListener("click", () => startRun(ch));
+    card.addEventListener("click", () => {
+      const allowNeutrals = !!(ch.region && optionCheckbox.checked);
+      startRun(ch, { allowChallengeNeutrals: allowNeutrals });
+    });
     grid.appendChild(card);
   }
 
