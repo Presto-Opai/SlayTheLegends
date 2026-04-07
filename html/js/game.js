@@ -1,3 +1,6 @@
+// Neutral cards always available in region-only challenges
+const CHALLENGE_NEUTRAL_CARDS = ["Defend", "Cleave", "Gallic Resolve", "Adrenaline Rush"];
+
 // ===================== META PROGRESS =====================
 class MetaProgress {
   constructor() {
@@ -271,7 +274,17 @@ class Game {
     switch (p.action) {
       case "damage": { const v = sv(p.value); this.dealDamage(v, "You"); this.log = `Used ${p.name}: ${v} damage!`; break; }
       case "block": { const v = sv(p.value); this.gainBlock(v); this.log = `Used ${p.name}: +${v} block!`; break; }
-      case "strength": { const v = Math.max(p.value, sv(p.value)); this.player.strength += v; this.log = `Used ${p.name}: +${v} STR!`; break; }
+      case "strength": {
+        const v = Math.max(p.value, sv(p.value));
+        this.player.strength += v;
+        // Track temporary potion STR so it can be removed between combats
+        // (permanent in region challenges that lack strength cards)
+        if (!this._regionLacksStrengthCards()) {
+          this.player.potionStr = (this.player.potionStr || 0) + v;
+        }
+        this.log = `Used ${p.name}: +${v} STR!`;
+        break;
+      }
       case "draw": { this.draw(p.value); this.log = `Used ${p.name}: drew ${p.value}!`; break; }
       case "vuln": { const v = Math.max(p.value, sv(p.value)); this.applyVuln(v); this.log = `Used ${p.name}: ${v} Vulnerable!`; break; }
       case "weak": { const v = Math.max(p.value, sv(p.value)); this.applyWeak(v); this.log = `Used ${p.name}: ${v} Weak!`; break; }
@@ -411,8 +424,10 @@ class Game {
     this.drawPenalty = 0;
     this.player.song_block = 0;
     this.player.strength -= (this.player.demonFormStr || 0);
+    this.player.strength -= (this.player.potionStr || 0);
     this.player.demonForm = 0;
     this.player.demonFormStr = 0;
+    this.player.potionStr = 0;
     this.player.juggernaut = 0;
     this.player.flameBarrier = 0;
     this.player.vuln = 0;
@@ -879,6 +894,12 @@ class Game {
     return result;
   }
 
+  _regionLacksStrengthCards() {
+    if (!this.challenge || !this.challenge.region) return false;
+    const STR_CARDS = ["Rally", "Volcan's Breath", "Rage du Diable"];
+    return !this.challenge.regionCards.some(c => STR_CARDS.includes(c));
+  }
+
   _isScalingFloor() {
     const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable"];
     const floor = this.level;
@@ -898,8 +919,8 @@ class Game {
     let regionLabel;
 
     if (this.challenge && this.challenge.region) {
-      // Region-only challenge: only cards from that region
-      pool = [...this.challenge.regionCards];
+      // Region-only challenge: only cards from that region (+ a few staple neutrals)
+      pool = [...this.challenge.regionCards, ...CHALLENGE_NEUTRAL_CARDS];
       regionLabel = this.challenge.region;
     } else {
       const regionKeys = Object.keys(REGIONS);
@@ -918,8 +939,9 @@ class Game {
     const scalingPool = this._isScalingFloor();
     if (scalingPool) {
       // For region-only, only inject scaling cards that belong to this region
+      // (or are part of the always-available neutral pool)
       const effectiveScaling = (this.challenge && this.challenge.region)
-        ? scalingPool.filter(n => this.challenge.regionCards.includes(n))
+        ? scalingPool.filter(n => this.challenge.regionCards.includes(n) || CHALLENGE_NEUTRAL_CARDS.includes(n))
         : scalingPool;
       pool = pool.filter(n => !scalingPool.includes(n));
 
@@ -1006,8 +1028,8 @@ class Game {
 
     let cardPool;
     if (this.challenge && this.challenge.region) {
-      // Region-only: shop cards from that region only
-      cardPool = [...this.challenge.regionCards];
+      // Region-only: shop cards from that region (+ a few staple neutrals)
+      cardPool = [...this.challenge.regionCards, ...CHALLENGE_NEUTRAL_CARDS];
     } else {
       cardPool = Object.keys(CARD_DB);
     }
@@ -1015,7 +1037,7 @@ class Game {
     const shopCardNames = this._sample(cardPool.filter(n => !SCALING_CARDS.includes(n)), 4);
     // Guarantee 1 scaling card in every shop (region-filtered if needed)
     const availableScaling = (this.challenge && this.challenge.region)
-      ? SCALING_CARDS.filter(n => this.challenge.regionCards.includes(n))
+      ? SCALING_CARDS.filter(n => this.challenge.regionCards.includes(n) || CHALLENGE_NEUTRAL_CARDS.includes(n))
       : SCALING_CARDS;
     if (availableScaling.length > 0) {
       const scalingPick = availableScaling[Math.floor(Math.random() * availableScaling.length)];
