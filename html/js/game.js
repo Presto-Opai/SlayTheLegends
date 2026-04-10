@@ -902,7 +902,7 @@ class Game {
   }
 
   _isScalingFloor() {
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Rage du Diable"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable"];
     const floor = this.level;
     // Base: floors 5, 8, 11, 14... (every 3 starting at 5)
     let isScaling = floor >= 5 && (floor - 5) % 3 === 0;
@@ -931,7 +931,7 @@ class Game {
       pool = [...REGIONS[region]];
       pool.push("Lunge", "Expose", "Focus", "Hamper", "Fortify", "Rally",
         "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
-        "Armure aux Lions", "Jeanne's Pyre",
+        "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre",
         "Botte de Nevers", "Enchaînement", "Rempart de Vauban", "Ruse de Renart");
       if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
       if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
@@ -1028,7 +1028,7 @@ class Game {
     this.rewardChoices = [];
     this.shopItems = [];
 
-    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Rage du Diable"];
+    const SCALING_CARDS = ["Rally", "Fortify", "Volcan's Breath", "Gallic Resolve", "Rage du Diable"];
 
     let cardPool;
     if (this.challenge && this.challenge.region) {
@@ -1039,7 +1039,7 @@ class Game {
       cardPool = Object.keys(CARD_DB);
     }
 
-    const shopCardNames = this._sample(cardPool.filter(n => !SCALING_CARDS.includes(n) && n !== "Gallic Resolve"), 4);
+    const shopCardNames = this._sample(cardPool.filter(n => !SCALING_CARDS.includes(n)), 4);
     // Guarantee 1 scaling card in every shop (region-filtered if needed)
     const availableScaling = (this.challenge && this.challenge.region)
       ? SCALING_CARDS.filter(n => this.challenge.regionCards.includes(n)
