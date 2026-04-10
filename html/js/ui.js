@@ -190,7 +190,7 @@ function redraw() {
   pileInfo.appendChild(drawBtn);
   pileInfo.appendChild(document.createTextNode("  "));
   pileInfo.appendChild(discardBtn);
-  const floorText = game.level === 50 ? `  Floor: ${game.level} (FINAL)  Gold: ${game.gold}` : `  Floor: ${game.level}  Gold: ${game.gold}`;
+  const floorText = game.level === 40 ? `  Floor: ${game.level} (FINAL)  Gold: ${game.gold}` : `  Floor: ${game.level}  Gold: ${game.gold}`;
   pileInfo.appendChild(document.createTextNode(floorText));
   playerSec.appendChild(pileInfo);
   main.appendChild(playerSec);
@@ -621,22 +621,8 @@ function renderChallengeSelect(main) {
 
   const sub = el("div", "challenge-select-sub");
   const completed = CHALLENGES.filter(c => meta.isChallengeComplete(c.id)).length;
-  sub.textContent = `Defeat L'Ombre Souveraine on Floor 50 to complete each challenge. (${completed}/${CHALLENGES.length} completed)`;
+  sub.textContent = `Defeat L'Ombre Souveraine on Floor 40 to complete each challenge. (${completed}/${CHALLENGES.length} completed)`;
   sec.appendChild(sub);
-
-  // Optional toggle: include staple neutral cards in region-only challenges
-  const optionRow = el("div", "challenge-select-option");
-  const optionLabel = document.createElement("label");
-  optionLabel.className = "challenge-select-option-label";
-  const optionCheckbox = document.createElement("input");
-  optionCheckbox.type = "checkbox";
-  optionCheckbox.id = "challenge-allow-neutrals";
-  optionLabel.appendChild(optionCheckbox);
-  const optionText = document.createElement("span");
-  optionText.textContent = " Include staple neutral cards in region challenges (Defend, Cleave, Adrenaline Rush)";
-  optionLabel.appendChild(optionText);
-  optionRow.appendChild(optionLabel);
-  sec.appendChild(optionRow);
 
   // Optional toggle: add Gallic Resolve to starter deck in region-only challenges
   const grRow = el("div", "challenge-select-option");
@@ -660,7 +646,7 @@ function renderChallengeSelect(main) {
   freeName.textContent = "No Challenge";
   freeCard.appendChild(freeName);
   const freeDesc = el("div", "challenge-card-desc");
-  freeDesc.textContent = "Play a normal run to Floor 50.";
+  freeDesc.textContent = "Play a normal run to Floor 40.";
   freeCard.appendChild(freeDesc);
   freeCard.addEventListener("click", () => startRun(null));
   grid.appendChild(freeCard);
@@ -694,9 +680,8 @@ function renderChallengeSelect(main) {
     }
 
     card.addEventListener("click", () => {
-      const allowNeutrals = !!(ch.region && optionCheckbox.checked);
       const starterGR = !!(ch.region && grCheckbox.checked);
-      startRun(ch, { allowChallengeNeutrals: allowNeutrals, starterGallicResolve: starterGR });
+      startRun(ch, { starterGallicResolve: starterGR });
     });
     grid.appendChild(card);
   }
