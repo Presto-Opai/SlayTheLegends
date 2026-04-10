@@ -1,5 +1,5 @@
 // Neutral cards always available in region-only challenges
-const CHALLENGE_NEUTRAL_CARDS = ["Defend", "Cleave", "Gallic Resolve", "Adrenaline Rush"];
+const CHALLENGE_NEUTRAL_CARDS = ["Defend", "Cleave", "Adrenaline Rush"];
 
 // ===================== META PROGRESS =====================
 class MetaProgress {
@@ -157,7 +157,7 @@ class Game {
     const startNames = [
       "Strike", "Strike", "Strike", "Strike", "Strike",
       "Defend", "Defend", "Defend", "Defend",
-      "Lunge", "Expose", "Focus"
+      "Lunge", "Expose", "Focus", "Gallic Resolve"
     ];
     this.deck = startNames.map(n => ({ ...CARD_DB[n] }));
     this.shuffle(this.deck);

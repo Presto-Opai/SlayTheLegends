@@ -633,7 +633,7 @@ function renderChallengeSelect(main) {
   optionCheckbox.id = "challenge-allow-neutrals";
   optionLabel.appendChild(optionCheckbox);
   const optionText = document.createElement("span");
-  optionText.textContent = " Include staple neutral cards in region challenges (Defend, Cleave, Gallic Resolve, Adrenaline Rush)";
+  optionText.textContent = " Include staple neutral cards in region challenges (Defend, Cleave, Adrenaline Rush)";
   optionLabel.appendChild(optionText);
   optionRow.appendChild(optionLabel);
   sec.appendChild(optionRow);
