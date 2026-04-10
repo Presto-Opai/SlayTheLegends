@@ -157,8 +157,9 @@ class Game {
     const startNames = [
       "Strike", "Strike", "Strike", "Strike", "Strike",
       "Defend", "Defend", "Defend", "Defend",
-      "Lunge", "Expose", "Focus", "Gallic Resolve"
+      "Lunge", "Expose", "Focus"
     ];
+    if (options.starterGallicResolve) startNames.push("Gallic Resolve");
     this.deck = startNames.map(n => ({ ...CARD_DB[n] }));
     this.shuffle(this.deck);
     this.drawPile = this.deck.map(c => ({ ...c }));

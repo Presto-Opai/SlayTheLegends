@@ -638,6 +638,20 @@ function renderChallengeSelect(main) {
   optionRow.appendChild(optionLabel);
   sec.appendChild(optionRow);
 
+  // Optional toggle: add Gallic Resolve to starter deck in region-only challenges
+  const grRow = el("div", "challenge-select-option");
+  const grLabel = document.createElement("label");
+  grLabel.className = "challenge-select-option-label";
+  const grCheckbox = document.createElement("input");
+  grCheckbox.type = "checkbox";
+  grCheckbox.id = "challenge-starter-gallic-resolve";
+  grLabel.appendChild(grCheckbox);
+  const grText = document.createElement("span");
+  grText.textContent = " Add Gallic Resolve to starter deck";
+  grLabel.appendChild(grText);
+  grRow.appendChild(grLabel);
+  sec.appendChild(grRow);
+
   const grid = el("div", "challenge-grid");
 
   // No Challenge option
@@ -681,7 +695,8 @@ function renderChallengeSelect(main) {
 
     card.addEventListener("click", () => {
       const allowNeutrals = !!(ch.region && optionCheckbox.checked);
-      startRun(ch, { allowChallengeNeutrals: allowNeutrals });
+      const starterGR = !!(ch.region && grCheckbox.checked);
+      startRun(ch, { allowChallengeNeutrals: allowNeutrals, starterGallicResolve: starterGR });
     });
     grid.appendChild(card);
   }
