@@ -23,6 +23,7 @@ function bindEvents() {
     if (e.key === "r" || e.key === "R") restart();
     if (e.key === "l" || e.key === "L") toggleLegacy();
     if (e.key === "s" || e.key === "S") saveGame();
+    if (e.key === "e" || e.key === "E") endTurn();
     if (e.key === "1") { game.usePotion(0); redraw(); }
     if (e.key === "2") { game.usePotion(1); redraw(); }
     if (e.key === "3") { game.usePotion(2); redraw(); }
