@@ -1,5 +1,3 @@
-// Neutral cards always available in region-only challenges
-const CHALLENGE_NEUTRAL_CARDS = ["Defend", "Cleave", "Adrenaline Rush"];
 
 // ===================== META PROGRESS =====================
 class MetaProgress {
@@ -100,7 +98,6 @@ class Game {
   constructor(meta, challenge = null, options = {}) {
     this.meta = meta || new MetaProgress();
     this.challenge = challenge;
-    this.allowChallengeNeutrals = !!options.allowChallengeNeutrals;
     this.level = 0;
     this.kills = 0;
     this.won = false;
@@ -358,8 +355,8 @@ class Game {
 
   // ---- Turn Flow ----
   nextEnemy() {
-    // Floor 50: spawn the final boss
-    if (this.level === 50) {
+    // Floor 40: spawn the final boss
+    if (this.level === 40) {
       this._spawnFinalBoss();
       return;
     }
@@ -922,9 +919,7 @@ class Game {
 
     if (this.challenge && this.challenge.region) {
       // Region-only challenge: only cards from that region
-      // (optionally augmented with a few staple neutrals)
       pool = [...this.challenge.regionCards];
-      if (this.allowChallengeNeutrals) pool.push(...CHALLENGE_NEUTRAL_CARDS);
       regionLabel = this.challenge.region;
     } else {
       const regionKeys = Object.keys(REGIONS);
@@ -943,10 +938,8 @@ class Game {
     const scalingPool = this._isScalingFloor();
     if (scalingPool) {
       // For region-only, only inject scaling cards that belong to this region
-      // (and possibly the neutral pool, if allowed)
       const effectiveScaling = (this.challenge && this.challenge.region)
-        ? scalingPool.filter(n => this.challenge.regionCards.includes(n)
-            || (this.allowChallengeNeutrals && CHALLENGE_NEUTRAL_CARDS.includes(n)))
+        ? scalingPool.filter(n => this.challenge.regionCards.includes(n))
         : scalingPool;
       pool = pool.filter(n => !scalingPool.includes(n));
 
@@ -1033,9 +1026,8 @@ class Game {
 
     let cardPool;
     if (this.challenge && this.challenge.region) {
-      // Region-only: shop cards from that region (optionally + staple neutrals)
+      // Region-only: shop cards from that region
       cardPool = [...this.challenge.regionCards];
-      if (this.allowChallengeNeutrals) cardPool.push(...CHALLENGE_NEUTRAL_CARDS);
     } else {
       cardPool = Object.keys(CARD_DB);
     }
@@ -1043,8 +1035,7 @@ class Game {
     const shopCardNames = this._sample(cardPool.filter(n => !SCALING_CARDS.includes(n)), 4);
     // Guarantee 1 scaling card in every shop (region-filtered if needed)
     const availableScaling = (this.challenge && this.challenge.region)
-      ? SCALING_CARDS.filter(n => this.challenge.regionCards.includes(n)
-          || (this.allowChallengeNeutrals && CHALLENGE_NEUTRAL_CARDS.includes(n)))
+      ? SCALING_CARDS.filter(n => this.challenge.regionCards.includes(n))
       : SCALING_CARDS;
     if (availableScaling.length > 0) {
       const scalingPick = availableScaling[Math.floor(Math.random() * availableScaling.length)];
