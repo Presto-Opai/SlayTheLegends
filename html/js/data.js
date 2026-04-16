@@ -62,8 +62,8 @@ function makeCardDB() {
 
   // Alpes
   add("Dahu Sidestep", 1, "Skill", "Gain 4 block. Draw 1.", "dahuSidestep");
-  add("Avalanche Chant", 2, "Skill", "Negate 8 from enemy attack.", "avalancheChant", "uncommon");
-  add("Loup des Alpes", 1, "Attack", "Deal 6. If enemy Weak, +3.", "loupAlpes");
+  add("Avalanche Chant", 3, "Skill", "Gain 1 block 4x. +1 armor. Apply 6 Vulnerable. Exhaust.", "avalancheChant", "uncommon");
+  add("Loup des Alpes", 2, "Attack", "Deal 7. Play all Loup des Alpes in hand for free.", "loupAlpes");
 
   // Auvergne
   add("Bête du Gévaudan", 2, "Attack", "Deal 14.", "atk14", "uncommon");
