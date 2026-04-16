@@ -330,8 +330,7 @@ class Game {
       case "santonsBlessing": this.gainBlock(6); this.heal(2); return "Blessed: +6 block, heal 2.";
       case "mauvaisPas": this.dealDamage(5, "You"); this.enemy.weak += 1; return "Slip: 5 + 1 Weak";
       case "dahuSidestep": this.gainBlock(4); this.draw(1); return "Sidestep +4 block, drew 1.";
-      case "avalancheChant": this.negateEnemyAttack(8); return "Snow muffles claws.";
-      case "loupAlpes": { const d = 6 + (this.enemy.weak > 0 ? 3 : 0); this.dealDamage(d, "You"); return `Wolf tears for ${d}.`; }
+      case "avalancheChant": for (let i = 0; i < 4; i++) this.gainBlock(1); this.player.armor += 1; this.applyVuln(6); return "Avalanche: 4x+1 block, +1 armor, 6 Vuln.";
       case "volcanBreath": this.player.strength += 1; this.enemy.vuln += 1; return "+1 STR, +1 Vuln";
       case "melusineVeil": this.gainBlock(5); this.addNextEnergy(1); return "Veil: +5 block, +1 energy next turn.";
       case "gargantuaStep": this.dealDamage(9, "You"); this.draw(1); return "Stomp for 9; drew 1.";
@@ -794,6 +793,21 @@ class Game {
       if (triggered) { this.dealDamage(9, "You"); this.draw(1); this.log = "Enchaînement: 9 damage, drew 1! (combo)"; }
       else { this.dealDamage(3, "You"); this.log = "Enchaînement: 3 damage."; }
       this.discardOrExhaust(played);
+      if (this.enemy.hp <= 0) { this.winBattle(); return; }
+      return;
+    }
+
+    if (played.effectKey === "loupAlpes") {
+      this.dealDamage(7, "You");
+      const copies = this.hand.filter(c => c.effectKey === "loupAlpes");
+      this.hand = this.hand.filter(c => c.effectKey !== "loupAlpes");
+      for (const copy of copies) {
+        this.dealDamage(7, "You");
+        this.discardOrExhaust(copy);
+      }
+      this.discardOrExhaust(played);
+      const total = 1 + copies.length;
+      this.log = total > 1 ? `Meute! ${total}x Loup pour 7 chacun!` : "Loup des Alpes: 7 dégâts.";
       if (this.enemy.hp <= 0) { this.winBattle(); return; }
       return;
     }
