@@ -184,29 +184,38 @@ class Game {
 
   dealDamage(amount, source = "You") {
     if (source === "You") {
-      amount += this.player.strength;
-      if (this.hasRelic("Red Skull") && this.player.hp < this.player.max_hp * 0.5) amount += 3;
-      if (this.player.weak > 0) amount = Math.floor(amount * 0.75);
-      if (this.hasRelic("Pen Nib") && this.attacksPlayed > 0 && this.attacksPlayed % 10 === 0) amount *= 2;
+      const res = playerHitDamage(amount, {
+        strength: this.player.strength,
+        weak: this.player.weak,
+        enemyVuln: this.enemy.vuln,
+        redSkull: this.hasRelic("Red Skull"),
+        lowHp: this.player.hp < this.player.max_hp * 0.5,
+        penNibTrigger: this.hasRelic("Pen Nib") && this.attacksPlayed > 0 && this.attacksPlayed % 10 === 0,
+        stoneSkin: this.enemy.special === "stone_skin",
+        stoneThreshold: stoneSkinThreshold(this.level),
+        enemyBlock: this.enemy.block,
+      });
+      this.enemy.block = res.enemyBlockLeft;
+      this.enemy.hp -= res.toHp;
+      FX.emit({ type: "damage", target: "enemy", amount: res.toHp });
+      if (this.enemy.special === "thorns") {
+        this.player.hp -= 2;
+        this.clamp();
+        FX.emit({ type: "damage", target: "player", amount: 2 });
+      }
+      if (this.enemy.hp <= 0) FX.emit({ type: "death", target: "enemy" });
+      return res.toHp;
     }
-    if (this.enemy.vuln > 0 && source === "You") amount = Math.floor(amount * 1.5);
+    // Non-player sources: simple block + hp, no Strength/Vuln/thorns.
     amount = Math.max(0, amount);
-    // Stone Skin: attacks dealing low damage (before block) are reduced to 1
-    if (source === "You" && this.enemy.special === "stone_skin" && amount > 0) {
-      const lvl = this.level;
-      const threshold = Math.floor(5 * (lvl <= 40 ? 1.0 + 0.05 * lvl : 3.0 + 0.1 * (lvl - 40)));
-      if (amount <= threshold) amount = 1;
-    }
     if (this.enemy.block > 0) {
       const absorb = Math.min(this.enemy.block, amount);
       this.enemy.block -= absorb;
       amount -= absorb;
     }
     this.enemy.hp -= amount;
-    if (source === "You" && this.enemy.special === "thorns") {
-      this.player.hp -= 2;
-      this.clamp();
-    }
+    if (amount > 0) FX.emit({ type: "damage", target: "enemy", amount });
+    if (this.enemy.hp <= 0) FX.emit({ type: "death", target: "enemy" });
     return amount;
   }
 
@@ -547,21 +556,20 @@ class Game {
       const hits = this.enemyIntent.hits || 1;
       let total = 0;
       for (let h = 0; h < hits; h++) {
-        let dmg = this.enemyIntent.value;
-        if (this.enemy.weak > 0) dmg = Math.floor(dmg * 0.75);
-        dmg += (this.enemy.enrage_stacks || 0);
-        if (special === "pack_hunter" && this.player.block === 0) dmg += 3;
-        if (this.player.vuln > 0) dmg = Math.floor(dmg * 1.5);
-        if (this.hasRelic("Torii") && dmg <= 5 && dmg > 0) dmg = 1;
-        if (this.player.block > 0) {
-          const ab = Math.min(this.player.block, dmg);
-          this.player.block -= ab;
-          dmg -= ab;
-        }
-        const actual = Math.max(0, dmg);
+        const r = enemyHitDamage(this.enemyIntent.value, {
+          enemyWeak: this.enemy.weak,
+          enrage: this.enemy.enrage_stacks || 0,
+          packHunter: special === "pack_hunter",
+          playerVuln: this.player.vuln,
+          torii: this.hasRelic("Torii"),
+          blockRemaining: this.player.block,
+        });
+        this.player.block = r.blockLeft;
+        const actual = r.toHp;
         this.player.hp -= actual;
         this.damageTakenThisCombat += actual;
         total += actual;
+        FX.emit({ type: "damage", target: "player", amount: actual });
         if (special === "life_drain") {
           this.enemy.hp = Math.min(this.enemy.max_hp, this.enemy.hp + Math.floor(actual / 2));
         }
