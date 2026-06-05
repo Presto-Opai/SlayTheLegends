@@ -8,6 +8,7 @@ body {
   display: flex;
 }
 button { cursor: pointer; font-family: inherit; }
+.pixel-sprite { image-rendering: pixelated; image-rendering: crisp-edges; display: block; }
 
 /* ===================== LAYOUT ===================== */
 #app {
