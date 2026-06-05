@@ -107,15 +107,45 @@ function redraw() {
   if (game._scryCards) { renderScry(main); return; }
   if (game._showingRemoval) { renderRemoval(main); return; }
 
-  // Enemy section
-  const enemySec = el("div", "enemy-section");
-  const enemyPrefix = game.enemy.isFinalBoss ? "FINAL BOSS " : (game.enemy.elite ? "ELITE " : "");
-  const enemyLabel = enemyPrefix + game.enemy.name + " HP";
-  enemySec.appendChild(makeBar(enemyLabel, game.enemy.hp, game.enemy.max_hp, "enemy-bar"));
-  const enemyStats = el("div", "enemy-stats");
-  enemyStats.textContent = `Block: ${game.enemy.block}  Vuln: ${game.enemy.vuln}  Weak: ${game.enemy.weak}`;
-  enemySec.appendChild(enemyStats);
+  // ===================== ARENA =====================
+  const tier = game.enemy.isFinalBoss ? 5 : (game.enemy.tier || 1);
+  const arena = el("div", "arena arena-tier-" + tier);
 
+  // ---- Enemy half ----
+  const enemyWrap = el("div", "arena-enemy");
+
+  // Intent bubble (enriched in renderIntentBubble)
+  enemyWrap.appendChild(renderIntentBubble());
+
+  // Sprite stage
+  const stage = el("div", "enemy-stage");
+  stage.id = "enemy-stage";
+  const spr = renderSprite(game.enemy.name, 7);
+  spr.id = "enemy-sprite";
+  spr.classList.add("enemy-sprite");
+  stage.appendChild(spr);
+  enemyWrap.appendChild(stage);
+
+  // Name plate
+  const namePlate = el("div", "enemy-name-plate");
+  if (game.enemy.isFinalBoss) { namePlate.classList.add("plate-boss"); }
+  else if (game.enemy.elite) { namePlate.classList.add("plate-elite"); }
+  const prefix = game.enemy.isFinalBoss ? "★ FINAL BOSS · " : (game.enemy.elite ? "◆ ELITE · " : "");
+  namePlate.textContent = prefix + game.enemy.name;
+  enemyWrap.appendChild(namePlate);
+
+  // HP bar
+  enemyWrap.appendChild(makeBar("", game.enemy.hp, game.enemy.max_hp, "enemy-bar"));
+
+  // Status chips
+  const eChips = el("div", "chip-row");
+  if (game.enemy.block > 0) eChips.appendChild(makeChip("icon_block", game.enemy.block, "Block"));
+  if (game.enemy.vuln > 0) eChips.appendChild(makeChip("icon_vuln", game.enemy.vuln, "Vulnerable"));
+  if (game.enemy.weak > 0) eChips.appendChild(makeChip("icon_weak", game.enemy.weak, "Weak"));
+  if ((game.enemy.poison || 0) > 0) eChips.appendChild(makeChip("icon_poison", game.enemy.poison, "Poison"));
+  if (eChips.children.length) enemyWrap.appendChild(eChips);
+
+  // Special ability
   if (game.enemy.special) {
     const specials = {
       thorns: "Thorns (2 dmg on hit)", life_drain: "Life Drain", multi_hit: "Multi-Hit",
@@ -130,52 +160,45 @@ function redraw() {
       sovereign: "Sovereign (Life Drain, Enrage, Soul Crush, Shadow Hounds)",
     };
     const sp = el("div", "enemy-special");
-    sp.textContent = `Ability: ${specials[game.enemy.special] || game.enemy.special}`;
-    enemySec.appendChild(sp);
+    sp.textContent = "✦ " + (specials[game.enemy.special] || game.enemy.special);
+    enemyWrap.appendChild(sp);
   }
 
+  // Lore
   if (game.enemy.lore) {
     const loreEl = el("div", "enemy-lore");
     loreEl.textContent = game.enemy.lore;
-    enemySec.appendChild(loreEl);
+    enemyWrap.appendChild(loreEl);
   }
 
-  // Intent
-  if (game.enemyIntent.type !== "none") {
-    const intent = el("div", "enemy-intent");
-    if (game.enemyIntent.type === "attack") {
-      const hits = game.enemyIntent.hits || 1;
-      const ht = hits > 1 ? ` x${hits}` : "";
-      intent.textContent = `Intent: Attack ${game.enemyIntent.value}${ht}`;
-      intent.classList.add("intent-attack");
-    } else {
-      intent.textContent = `Intent: Block ${game.enemyIntent.value}`;
-      intent.classList.add("intent-block");
-    }
-    enemySec.appendChild(intent);
-  }
-
+  // Future intents
   if (game.revealedIntents.length > 0) {
     const ri = el("div", "revealed-intents");
-    ri.textContent = "Future: " + game.revealedIntents.map(r =>
-      `${r.type === "attack" ? "Atk" : "Blk"} ${r.value}`).join(", ");
-    enemySec.appendChild(ri);
+    ri.textContent = "Foresight: " + game.revealedIntents.map(r =>
+      `${r.type === "attack" ? "⚔" : "⛨"}${r.value}`).join("  ");
+    enemyWrap.appendChild(ri);
   }
-  main.appendChild(enemySec);
+  arena.appendChild(enemyWrap);
 
-  // Player section
-  const playerSec = el("div", "player-section");
-  playerSec.appendChild(makeBar("Your HP", game.player.hp, game.player.max_hp, "player-bar"));
-  const pStats = el("div", "player-stats");
-  pStats.textContent = `Block: ${game.player.block}  STR: ${game.player.strength}  Armor: ${game.player.armor}`;
-  if (game.player.weak > 0) pStats.textContent += `  Weak: ${game.player.weak}`;
-  if (game.player.vuln > 0) pStats.textContent += `  Vuln: ${game.player.vuln}`;
-  playerSec.appendChild(pStats);
+  // ---- Player half ----
+  const playerSec = el("div", "arena-player");
 
-  // Energy
+  // Energy orb
   const energyOrb = el("div", "energy-orb");
   energyOrb.textContent = game.energy;
   playerSec.appendChild(energyOrb);
+
+  playerSec.appendChild(makeBar("Your HP", game.player.hp, game.player.max_hp, "player-bar"));
+
+  // Player status chips
+  const pChips = el("div", "chip-row");
+  if (game.player.block > 0) pChips.appendChild(makeChip("icon_block", game.player.block, "Block"));
+  if (game.player.strength !== 0) pChips.appendChild(makeChip("icon_strength", game.player.strength, "Strength"));
+  if (game.player.armor > 0) pChips.appendChild(makeChip("icon_armor", game.player.armor, "Armor"));
+  if (game.player.weak > 0) pChips.appendChild(makeChip("icon_weak", game.player.weak, "Weak"));
+  if (game.player.vuln > 0) pChips.appendChild(makeChip("icon_vuln", game.player.vuln, "Vulnerable"));
+  if ((game.player.poison || 0) > 0) pChips.appendChild(makeChip("icon_poison", game.player.poison, "Poison"));
+  if (pChips.children.length) playerSec.appendChild(pChips);
 
   const pileInfo = el("div", "pile-info");
   const drawBtn = document.createElement("span");
@@ -194,7 +217,8 @@ function redraw() {
   const floorText = game.level === 40 ? `  Floor: ${game.level} (FINAL)  Gold: ${game.gold}` : `  Floor: ${game.level}  Gold: ${game.gold}`;
   pileInfo.appendChild(document.createTextNode(floorText));
   playerSec.appendChild(pileInfo);
-  main.appendChild(playerSec);
+  arena.appendChild(playerSec);
+  main.appendChild(arena);
 
   // Reward choices
   if (game.inReward && game.rewardChoices.length > 0) {
@@ -231,7 +255,7 @@ function redraw() {
     handSec.appendChild(handTitle);
     const handRow = el("div", "hand-row");
     game.hand.forEach((card, i) => {
-      const cardEl = makeCard(card, () => { game.playCard(i); redraw(); });
+      const cardEl = makeCard(card, () => { game.playCard(i); redraw(); }, { showDamage: true });
       if (card.cost > game.energy) cardEl.classList.add("unplayable");
       handRow.appendChild(cardEl);
     });
@@ -314,21 +338,98 @@ function makeBar(label, now, max, cls) {
   return wrap;
 }
 
-function makeCard(card, onClick) {
+// Context for damage previews (mirrors the player-side modifiers in combatMath).
+function previewCtxPlayer() {
+  return {
+    strength: game.player.strength,
+    weak: game.player.weak,
+    enemyVuln: game.enemy ? game.enemy.vuln : 0,
+    redSkull: game.relics.some(r => r.name === "Red Skull"),
+    lowHp: game.player.hp < game.player.max_hp * 0.5,
+  };
+}
+
+function makeChip(iconName, value, title) {
+  const c = el("div", "status-chip");
+  if (title) c.title = title;
+  c.appendChild(renderSprite(iconName, 2));
+  const t = el("span", "chip-val");
+  t.textContent = value;
+  c.appendChild(t);
+  return c;
+}
+
+// Floating intent bubble above the enemy, with live "incoming damage" preview.
+function renderIntentBubble() {
+  const area = el("div", "intent-area");
+  if (!game.enemyIntent || game.enemyIntent.type === "none") return area;
+  const bubble = el("div", "intent-bubble");
+
+  if (game.enemyIntent.type === "attack") {
+    const hits = game.enemyIntent.hits || 1;
+    bubble.classList.add("intent-bubble-attack");
+    bubble.appendChild(renderSprite(hits > 1 ? "intent_multi" : "intent_attack", 2));
+    const txt = el("span", "intent-txt");
+    txt.textContent = `${game.enemyIntent.value}${hits > 1 ? "×" + hits : ""}`;
+    bubble.appendChild(txt);
+    const incoming = previewIncoming(game.enemyIntent, {
+      enemyWeak: game.enemy.weak, enrage: game.enemy.enrage_stacks || 0,
+      packHunter: game.enemy.special === "pack_hunter", playerVuln: game.player.vuln,
+      torii: game.relics.some(r => r.name === "Torii"), playerBlock: game.player.block,
+    });
+    const prev = el("span", "intent-incoming");
+    prev.textContent = "➜ " + incoming;
+    if (incoming === 0) prev.classList.add("incoming-safe");
+    bubble.appendChild(prev);
+    bubble.title = `Raw ${game.enemyIntent.value}${hits > 1 ? " ×" + hits : ""} → ${incoming} HP lost after your block`;
+  } else {
+    bubble.classList.add("intent-bubble-block");
+    bubble.appendChild(renderSprite("intent_block", 2));
+    const txt = el("span", "intent-txt");
+    txt.textContent = game.enemyIntent.value;
+    bubble.appendChild(txt);
+    bubble.title = `Enemy will gain ${game.enemyIntent.value} block`;
+  }
+  area.appendChild(bubble);
+  return area;
+}
+
+function makeCard(card, onClick, opts) {
+  opts = opts || {};
   const rarity = card.rarity || "common";
-  const div = el("div", `card card-${rarity}`);
+  const div = el("div", `card card-${rarity} card-type-border-${card.type.toLowerCase()}`);
   div.addEventListener("click", onClick);
 
   const costOrb = el("span", "card-cost");
   costOrb.textContent = card.cost;
   div.appendChild(costOrb);
 
+  // Damage preview badge (combat hand only, attack cards whose value changed)
+  if (opts.showDamage && card.type === "Attack") {
+    const dmg = previewCardDamage(card, previewCtxPlayer());
+    const m = /Deal (\d+)/.exec(card.text || "");
+    if (dmg != null && m) {
+      const base = parseInt(m[1], 10);
+      if (dmg !== base) {
+        const badge = el("div", "card-dmg-badge " + (dmg > base ? "dmg-up" : "dmg-down"));
+        badge.textContent = dmg;
+        badge.title = "Effective damage with your modifiers";
+        div.appendChild(badge);
+      }
+    }
+  }
+
   const name = el("div", "card-name");
   name.textContent = card.name;
   div.appendChild(name);
 
   const type = el("div", `card-type card-type-${card.type.toLowerCase()}`);
-  type.textContent = card.type;
+  const typeIcon = renderSprite("icon_" + card.type.toLowerCase(), 2);
+  typeIcon.classList.add("card-type-icon");
+  type.appendChild(typeIcon);
+  const typeLbl = el("span");
+  typeLbl.textContent = card.type;
+  type.appendChild(typeLbl);
   div.appendChild(type);
 
   const text = el("div", "card-text");
