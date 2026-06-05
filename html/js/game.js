@@ -222,14 +222,18 @@ class Game {
   gainBlock(n) {
     n += this.player.armor;
     this.player.block += n;
+    FX.emit({ type: "block", target: "player", amount: n });
     if (this.player.juggernaut > 0 && this.enemy) {
       this.enemy.hp -= this.player.juggernaut;
+      FX.emit({ type: "damage", target: "enemy", amount: this.player.juggernaut });
+      if (this.enemy.hp <= 0) FX.emit({ type: "death", target: "enemy" });
     }
   }
 
   heal(n) {
     if (this.challenge && this.challenge.id === "no_healing") return;
     this.player.hp += n; this.clamp();
+    FX.emit({ type: "heal", target: "player", amount: n });
   }
 
   draw(n) {
@@ -244,8 +248,8 @@ class Game {
     }
   }
 
-  applyVuln(n) { this.enemy.vuln += n; }
-  applyWeak(n) { this.enemy.weak += n; }
+  applyVuln(n) { this.enemy.vuln += n; FX.emit({ type: "status", target: "enemy", text: "Vuln" }); }
+  applyWeak(n) { this.enemy.weak += n; FX.emit({ type: "status", target: "enemy", text: "Weak" }); }
 
   discardOrExhaust(card) {
     if (card.text && card.text.includes("Exhaust.")) {

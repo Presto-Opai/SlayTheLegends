@@ -99,6 +99,12 @@ function redraw() {
   const main = document.getElementById("game-area");
   main.innerHTML = "";
 
+  // Non-combat screens: drop any queued combat FX so they don't leak across.
+  if (pendingReset || showingChallengeSelect || showingLegacy || game.won ||
+      game.dead || game._scryCards || game._showingRemoval) {
+    FX.clear();
+  }
+
   if (pendingReset) { renderResetConfirm(main); return; }
   if (showingChallengeSelect) { renderChallengeSelect(main); return; }
   if (showingLegacy) { renderLegacy(main); return; }
@@ -265,6 +271,9 @@ function redraw() {
 
   // Update sidebar
   updateSidebar();
+
+  // Play any queued combat effects against the freshly-rendered sprites.
+  FX.flush(document.getElementById("fx-layer"));
 }
 
 function updateSidebar() {
