@@ -184,7 +184,8 @@ function redraw() {
       `${r.type === "attack" ? "⚔" : "⛨"}${r.value}`).join("  ");
     enemyWrap.appendChild(ri);
   }
-  arena.appendChild(enemyWrap);
+  // Hide the vanquished foe while shopping (keep it during reward).
+  if (!game.inShop) arena.appendChild(enemyWrap);
 
   // ---- Player half ----
   const playerSec = el("div", "arena-player");
