@@ -5,12 +5,12 @@ const REGIONS = {
   "Bretagne": ["Ankou's Scythe", "Korrigan Trick", "Washerwomen's Omen", "Botte de Nevers"],
   "Provence": ["Tarasque Roar", "Drac of Camargue", "Santons' Blessing", "Jeanne's Pyre"],
   "Normandie": ["Dame Blanche", "Mauvais Pas", "Mont-Saint-Michel Tide", "Rempart de Vauban"],
-  "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes"],
-  "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Rage du Diable"],
-  "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse"],
+  "Alpes": ["Dahu Sidestep", "Avalanche Chant", "Loup des Alpes", "Venin de la Vouivre"],
+  "Auvergne": ["Bête du Gévaudan", "Volcan's Breath", "Cantal Shield", "Rage du Diable", "Souffle Empoisonné"],
+  "Val de Loire": ["Mélusine's Veil", "Gargantua's Step", "Château Ruse", "Pacte du Crapaud"],
   "Ardennes": ["Bayard's Hoofbeat", "Forest Ambush", "Smugglers' Wile", "Armure aux Lions", "Ruse de Renart"],
   "Occitanie": ["Lou Pastre Ballad", "Fées de l'Orb", "Cathar Resolve", "Enchaînement"],
-  "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Fureur de Woinic"],
+  "Corse": ["Mazzeru's Vision", "Vendetta Strike", "Maquis Ambush", "Fureur de Woinic", "Estoc Précis"],
   "Alsace": ["Stork's Blessing", "Hans Trapp's Fury", "Rhine Gold"],
 };
 
@@ -107,6 +107,13 @@ function makeCardDB() {
   add("Fureur de Woinic", 2, "Power", "Deal 3 damage to enemy whenever you gain block. Exhaust.", "juggernaut", "uncommon");
   add("Jeanne's Pyre", 1, "Power", "When hit, deal 4 damage back. Exhaust.", "flameBarrier", "uncommon");
 
+  // Poison set — stacking damage-over-time the player applies to enemies
+  add("Venin de la Vouivre", 1, "Attack", "Deal 4. Apply 3 Poison.", "veninVouivre", "uncommon");
+  add("Souffle Empoisonné", 1, "Skill", "Apply 5 Poison.", "souffleEmpoisonne", "uncommon");
+  add("Estoc Précis", 2, "Attack", "Deal 7. If enemy is Poisoned, deal 7 again.", "estocPrecis", "uncommon");
+  add("Catalyseur", 0, "Skill", "Double the enemy's Poison. Exhaust.", "catalyseur", "rare");
+  add("Pacte du Crapaud", 1, "Power", "At end of each turn, apply 2 Poison. Exhaust.", "pacteCrapaud", "rare");
+
   return db;
 }
 
@@ -151,6 +158,8 @@ const RELICS = [
   { name: "Torii", desc: "If you take 5 or less damage, reduce to 1.", effect: "torii", value: 5 },
   { name: "Meat on Bone", desc: "Heal 12 HP after combat if below 50% HP.", effect: "conditional_heal", value: 12 },
   { name: "Sight of the Mazzeri", desc: "+1 card drawn per turn.", effect: "card_draw", value: 1 },
+  { name: "Fiole de Venin", desc: "Enemies start each combat with 2 Poison.", effect: "start_poison", value: 2 },
+  { name: "Dague Enduite", desc: "First attack each combat applies 2 Poison.", effect: "coated_dagger", value: 2 },
 ];
 
 const POTIONS = [

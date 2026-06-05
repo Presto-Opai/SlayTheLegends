@@ -198,6 +198,10 @@ class Game {
       this.enemy.block = res.enemyBlockLeft;
       this.enemy.hp -= res.toHp;
       FX.emit({ type: "damage", target: "enemy", amount: res.toHp });
+      if (this.hasRelic("Dague Enduite") && !this.player.daggerUsed) {
+        this.player.daggerUsed = true;
+        this.applyPoison(2);
+      }
       if (this.enemy.special === "thorns") {
         this.player.hp -= 2;
         this.clamp();
@@ -250,6 +254,11 @@ class Game {
 
   applyVuln(n) { this.enemy.vuln += n; FX.emit({ type: "status", target: "enemy", text: "Vuln" }); }
   applyWeak(n) { this.enemy.weak += n; FX.emit({ type: "status", target: "enemy", text: "Weak" }); }
+  applyPoison(n) {
+    if (n <= 0) return;
+    this.enemy.poison = (this.enemy.poison || 0) + n;
+    FX.emit({ type: "status", target: "enemy", text: "Poison" });
+  }
 
   discardOrExhaust(card) {
     if (card.text && card.text.includes("Exhaust.")) {
@@ -361,6 +370,19 @@ class Game {
       case "armureLions": this.player.armor += 3; return "Armure aux Lions: +3 permanent armor!";
       case "juggernaut": this.player.juggernaut = (this.player.juggernaut || 0) + 3; return "Juggernaut: 3 dmg on block gain!";
       case "flameBarrier": this.player.flameBarrier = (this.player.flameBarrier || 0) + 4; return "Flame Barrier: 4 dmg on hit!";
+      case "veninVouivre": this.dealDamage(4, "You"); this.applyPoison(3); return "Venom: 4 dmg + 3 Poison.";
+      case "souffleEmpoisonne": this.applyPoison(5); return "A poisonous breath: 5 Poison.";
+      case "estocPrecis": {
+        this.dealDamage(7, "You");
+        if ((this.enemy.poison || 0) > 0) { this.dealDamage(7, "You"); return "Estoc: 7, then 7 more (Poison combo)!"; }
+        return "Estoc: 7 damage.";
+      }
+      case "catalyseur": {
+        const add = this.enemy.poison || 0;
+        this.applyPoison(add);
+        return add > 0 ? `Catalyst: Poison doubled to ${this.enemy.poison}!` : "Catalyst: no Poison to double.";
+      }
+      case "pacteCrapaud": this.player.toadPact = (this.player.toadPact || 0) + 2; return "Toad's Pact: +2 Poison each turn!";
       default: return card.text;
     }
   }
@@ -411,7 +433,7 @@ class Game {
 
     this.enemy = {
       ...template,
-      hp: template.max_hp, block: 0, vuln: 0, weak: 0, enrage_stacks: 0,
+      hp: template.max_hp, block: 0, vuln: 0, weak: 0, poison: 0, enrage_stacks: 0,
       lore: template.lore || null, elite: isElite
     };
 
@@ -423,6 +445,7 @@ class Game {
     this._resetCombatState();
 
     if (this.hasRelic("Bag of Marbles")) this.enemy.vuln += 1;
+    if (this.hasRelic("Fiole de Venin")) this.enemy.poison += 2;
 
     this.inReward = false;
     this.startPlayerTurn();
@@ -441,6 +464,8 @@ class Game {
     this.player.potionStr = 0;
     this.player.juggernaut = 0;
     this.player.flameBarrier = 0;
+    this.player.toadPact = 0;
+    this.player.daggerUsed = false;
     this.player.vuln = 0;
     this.player.weak = 0;
     this.handsize = this.baseHandsize + (this.hasRelic("Sight of the Mazzeri") ? 1 : 0);
@@ -459,7 +484,7 @@ class Game {
       name: FINAL_BOSS_TEMPLATE.name,
       max_hp: hp, hp: hp,
       atk_min: atkMin, atk_max: atkMax,
-      block: 0, vuln: 0, weak: 0,
+      block: 0, vuln: 0, weak: 0, poison: 0,
       block_chance: FINAL_BOSS_TEMPLATE.block_chance,
       special: FINAL_BOSS_TEMPLATE.special,
       tier: FINAL_BOSS_TEMPLATE.tier,
@@ -471,6 +496,7 @@ class Game {
     this._resetCombatState();
 
     if (this.hasRelic("Bag of Marbles")) this.enemy.vuln += 1;
+    if (this.hasRelic("Fiole de Venin")) this.enemy.poison += 2;
 
     this.inReward = false;
     this.startPlayerTurn();
@@ -497,6 +523,19 @@ class Game {
   }
 
   endPlayerTurn() {
+    // Pacte du Crapaud: stack poison at the end of each turn.
+    if (this.player.toadPact > 0) this.applyPoison(this.player.toadPact);
+
+    // Poison ticks at the start of the enemy's turn (ignores block).
+    if ((this.enemy.poison || 0) > 0) {
+      const dmg = this.enemy.poison;
+      this.enemy.hp -= dmg;
+      FX.emit({ type: "damage", target: "enemy", amount: dmg });
+      this.enemy.poison = Math.max(0, this.enemy.poison - 1);
+      this.log = `${this.enemy.name} suffers ${dmg} poison.`;
+      if (this.enemy.hp <= 0) { FX.emit({ type: "death", target: "enemy" }); this.winBattle(); return; }
+    }
+
     if (this.hasRelic("Orichalcum") && this.player.block === 0) this.player.block += 6;
 
     this.enemyAct();
@@ -955,7 +994,8 @@ class Game {
         "Cleave", "Blood Pact", "Perfect Guard", "Body Slam", "Second Wind",
         "Gallic Resolve", "Armure aux Lions", "Jeanne's Pyre",
         "Botte de Nevers", "Enchaînement", "Rempart de Vauban", "Ruse de Renart");
-      if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic");
+      if (this.level >= 3) pool.push("Whirlwind", "Rampage", "Shockwave", "Fureur de Woinic",
+        "Venin de la Vouivre", "Souffle Empoisonné", "Estoc Précis", "Catalyseur", "Pacte du Crapaud");
       if (this.level >= 5) pool.push("Vendetta Strike", "Adrenaline Rush", "Offering", "Rage du Diable");
       regionLabel = region;
     }
@@ -1166,6 +1206,7 @@ class Game {
       enemy: {
         name: this.enemy.name, hp: this.enemy.hp, max_hp: this.enemy.max_hp,
         block: this.enemy.block, vuln: this.enemy.vuln, weak: this.enemy.weak,
+        poison: this.enemy.poison || 0,
         atk_min: this.enemy.atk_min, atk_max: this.enemy.atk_max,
         block_chance: this.enemy.block_chance, special: this.enemy.special,
         tier: this.enemy.tier || 1, enrage_stacks: this.enemy.enrage_stacks || 0,
@@ -1230,6 +1271,7 @@ class Game {
       g.enemy = {
         name: ed.name, hp: ed.hp, max_hp: ed.max_hp,
         block: ed.block, vuln: ed.vuln, weak: ed.weak,
+        poison: ed.poison || 0,
         atk_min: ed.atk_min, atk_max: ed.atk_max,
         block_chance: ed.block_chance, special: ed.special,
         tier: ed.tier || 1, enrage_stacks: ed.enrage_stacks || 0,

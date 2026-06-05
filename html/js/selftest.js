@@ -64,6 +64,35 @@
     eq("playerhit#" + i, predicted, hp0 - g.enemy.hp);
   });
 
+  // ---- poison ----
+  (function () {
+    const g = fresh();
+    g.relics = []; g.player.hp = 300; g.player.max_hp = 300;
+    g.enemy.hp = 100; g.enemy.max_hp = 100; g.enemy.block = 0; g.enemy.special = null; g.enemy.poison = 0;
+    g.applyPoison(5);
+    eq("poison-apply", g.enemy.poison, 5);
+    g.enemyIntent = { type: "block", value: 0 };
+    const hp0 = g.enemy.hp;
+    g.endPlayerTurn();
+    eq("poison-tick-dmg", hp0 - g.enemy.hp, 5);
+    eq("poison-decrement", g.enemy.poison, 4);
+  })();
+  (function () {
+    const g = fresh();
+    g.relics = []; g.player.strength = 0; g.player.weak = 0;
+    g.enemy.vuln = 0; g.enemy.block = 0; g.enemy.special = null;
+    g.enemy.hp = 200; g.enemy.max_hp = 200; g.enemy.poison = 3;
+    const hp = g.enemy.hp;
+    g.executeCardEffect({ effectKey: "estocPrecis", text: "Deal 7. If enemy is Poisoned, deal 7 again." });
+    eq("estoc-poison-combo", hp - g.enemy.hp, 14);
+  })();
+  (function () {
+    const g = fresh();
+    g.enemy.special = null; g.enemy.poison = 4;
+    g.executeCardEffect({ effectKey: "catalyseur", text: "Double the enemy's Poison. Exhaust." });
+    eq("catalyseur-double", g.enemy.poison, 8);
+  })();
+
   console.log(`SELFTEST: ${pass} passed / ${fail} failed`);
   if (fail) console.warn("SELFTEST failures:\n" + fails.join("\n"));
 })();
